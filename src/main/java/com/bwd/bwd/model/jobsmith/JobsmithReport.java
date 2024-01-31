@@ -25,7 +25,7 @@ public class JobsmithReport
 	public String jobsmith_report_name;
 	public String jobsmith_report_note;
 	public int companyid;
-	public long useraccountid;
+	public int useraccountid;
 	public java.sql.Timestamp date_added;
 	public java.sql.Timestamp date_modifed;
 	public String report_status;
@@ -72,7 +72,7 @@ public class JobsmithReport
 		return obj;
 	}
 	
-	public JobsmithReport(int jobsmith_reportid_,String jobsmith_report_name_,String jobsmith_report_note_,int companyid_,long useraccountid_,java.sql.Timestamp date_added_,java.sql.Timestamp date_modifed_,String report_status_,java.sql.Timestamp status_date_,int locked_,int archived_)
+	public JobsmithReport(int jobsmith_reportid_,String jobsmith_report_name_,String jobsmith_report_note_,int companyid_,int useraccountid_,java.sql.Timestamp date_added_,java.sql.Timestamp date_modifed_,String report_status_,java.sql.Timestamp status_date_,int locked_,int archived_)
 	{
 		this.jobsmith_reportid = jobsmith_reportid_;
 		this.jobsmith_report_name = jobsmith_report_name_;

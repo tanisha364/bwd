@@ -22,12 +22,8 @@ public class OauthClients implements UserDetails {
 	private static final long serialVersionUID = -7858869558953243875L;
 	
 	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    protected Long id;	
-	
-	@Column(name = "client_id")
-	private String client_id;
-	
+    @Column(name = "client_id", length = 80)
+    private String client_id;
 	
 	@Column(name = "client_secret")
 	private String client_secret;
