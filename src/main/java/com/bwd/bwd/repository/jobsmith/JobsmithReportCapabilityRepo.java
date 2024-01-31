@@ -11,9 +11,9 @@ import com.bwd.bwd.model.jobsmith.JobsmithReportCapability;
 
 @Repository
 public interface JobsmithReportCapabilityRepo   extends JpaRepository<JobsmithReportCapability, Long> {
-	String query = "SELECT cap.rkaid, cap.Cap_CapabilityId, cap.Cap_Capability, jcap.jobsmith_categoryid as categoryid, Cap_Description FROM capability_tbl cap "
+	String query = "SELECT cap.Cap_CapabilityId, cap.Cap_Capability, jcap.jobsmith_categoryid as categoryid, Cap_Description FROM capability_tbl cap "
 			+ "INNER JOIN jobsmith_capability_tbl jcap "
-			+ "ON cap.rkaid = jcap.capabilityid "
+			+ " ON cap.Cap_CapabilityId = jcap.capabilityid"
 			+ "AND jcap.jobsmith_categoryid = ?1 AND  jcap.archived = 0";
 	@Query(nativeQuery = true, value = query)	
 	List<JobsmithCapabilities> findByRkaid(int catid);

@@ -14,8 +14,8 @@ import lombok.Setter;
 public class JobsmithCapabilities {
 	
 	@Id	
-	@Column(name = "rkaid")	
-	private Long Cap_CapabilityId;
+	@Column(name = "Cap_Capabilityid")	
+	private int Cap_CapabilityiId;
 	
 //	@Column(name = "Cap_CapabilityId")	
 //	private Long abc;
