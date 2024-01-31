@@ -56,8 +56,10 @@ import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
 import com.bwd.bwd.controller.auth.UserAuthController;
 import com.bwd.bwd.db.DBOperation;
+import com.bwd.bwd.db.DBSearch;
 import com.bwd.bwd.model.jobsmith.Critical;
 import com.bwd.bwd.model.jobsmith.Important;
+import com.bwd.bwd.model.jobsmith.JobSearchResult;
 import com.bwd.bwd.model.jobsmith.JobsmithCapabilities;
 import com.bwd.bwd.model.jobsmith.JobsmithReport;
 import com.bwd.bwd.model.jobsmith.JobsmithReportCapability;
@@ -981,6 +983,16 @@ public class JobsmithController {
 		}
 		
 		return listJPR;
+	}	
+	
+	@PostMapping("/getjobsearchresult")
+	public List<JobSearchResult> getJobSearchResult(@RequestBody UserData data)
+	{
+		DBSearch dbs = new DBSearch();
+		
+		List<JobSearchResult> jobSearchResult = dbs.getObjects(data.getFindValue());
+		
+		return jobSearchResult;
 	}	
 	
 }

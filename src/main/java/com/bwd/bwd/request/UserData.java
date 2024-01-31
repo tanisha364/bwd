@@ -11,4 +11,5 @@ public class UserData {
 	private String userid;
 	private int categoryId;
 	private int reportId;
+	private String findValue;	
 }

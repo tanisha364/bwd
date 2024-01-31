@@ -1,6 +1,7 @@
 package com.bwd.bwd.db;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -24,6 +25,7 @@ public class DBOperation {
 	
 	Connection con;
 	Statement stmt;
+	PreparedStatement pstmt;
 	ResultSet rs;		
 	
 	public DBOperation()
@@ -51,6 +53,28 @@ public class DBOperation {
 			se.printStackTrace(System.err);
 		}
 	}	
+
+	public void preparedSelectQuery(String sqlSelect)
+	{		
+		try
+		{
+			pstmt=con.prepareStatement(sqlSelect);			
+		}catch(SQLException se){
+			se.printStackTrace(System.err);
+		}
+	}	
+
+	public void executeSelectQuery(String findValue)
+	{		
+		try
+		{
+			System.out.println(findValue);
+			pstmt.setString(1, "%"+ findValue +"%");			
+			rs=pstmt.executeQuery();
+		}catch(SQLException se){
+			se.printStackTrace(System.err);
+		}
+	}		
 	
 	public String getTitle(String str)
 	{
@@ -126,7 +150,10 @@ public class DBOperation {
 			}
 			numberOfRow = cntRow;
 			rs.close();
-			stmt.close();						
+			if(stmt != null)
+			{
+				stmt.close();
+			}
 		}catch(SQLException se){
 			se.printStackTrace(System.err);
 		}
