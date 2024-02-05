@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @JavaBean
 public class UserInfo {
-//	private long useraccountid;
+	private int useraccountid;
 	private String firstname;
 	private String lastname;		
 	private int status;

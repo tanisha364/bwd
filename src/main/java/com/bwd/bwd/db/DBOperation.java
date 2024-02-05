@@ -28,6 +28,9 @@ public class DBOperation {
 	PreparedStatement pstmt;
 	ResultSet rs;		
 	
+	int statusCode;	
+	private int countUpdated;
+	
 	public DBOperation()
 	{
 		dbc = new DBConnection();
@@ -194,13 +197,14 @@ public class DBOperation {
 		try
 		{
 			stmt=con.createStatement();
-//			System.out.println(sqlUpdate);
-			int countInserted = stmt.executeUpdate(sqlUpdate);
+			//			System.out.println(sqlUpdate);
+			countUpdated = stmt.executeUpdate(sqlUpdate);
+			statusCode = 1;
 		} catch(SQLException ex) {
-	         ex.printStackTrace();
-	      }
-		
-	}	
+			//statusCode = 0;
+			ex.printStackTrace();
+		}
+	}
 	
 	public void deleteRecord(String sqlDelete)
 	{
@@ -214,6 +218,22 @@ public class DBOperation {
 	      }
 		
 	}	
+	
+	public int getCountUpdated() {
+		return countUpdated;
+	}
+
+	public void setCountUpdated(int countUpdated) {
+		this.countUpdated = countUpdated;
+	}
+	
+	public int getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(int statusCode) {
+		this.statusCode = statusCode;
+	}
 	
 	public static void main(String [] args)
 	{

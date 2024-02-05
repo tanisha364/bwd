@@ -1,6 +1,5 @@
 package com.bwd.bwd.controller.rest;
 
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bwd.bwd.controller.auth.UserAuthController;
-import com.bwd.bwd.model.Category;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.request.UserData;
@@ -25,7 +23,7 @@ import com.bwd.bwd.response.UserDataResponse;
 import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
 
-@CrossOrigin("http://192.168.200.197:3000")
+@CrossOrigin("*")
 @RestController
 @RequestMapping(path="/rest/user",  produces="application/json")
 public class UserController {

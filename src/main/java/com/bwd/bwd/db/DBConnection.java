@@ -28,7 +28,7 @@ public class DBConnection
 	
 	public void connectDB()
 	{
-		dsnName="devlive_dev";
+		dsnName="devlive_working";
 		uriName = "jdbc:mysql://192.168.200.67:3306/"+dsnName+"?createDatabaseIfNotExist=true";
 		driverName = "com.mysql.cj.jdbc.Driver";
 		username = "itneer";

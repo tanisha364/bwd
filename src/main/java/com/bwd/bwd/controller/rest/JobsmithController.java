@@ -57,6 +57,7 @@ import com.bwd.bwd.response.UserInfoResponse;
 import com.bwd.bwd.controller.auth.UserAuthController;
 import com.bwd.bwd.db.DBOperation;
 import com.bwd.bwd.db.DBSearch;
+import com.bwd.bwd.db.DBUpdate;
 import com.bwd.bwd.model.jobsmith.Critical;
 import com.bwd.bwd.model.jobsmith.Important;
 import com.bwd.bwd.model.jobsmith.JobSearchResult;
@@ -196,9 +197,9 @@ public class JobsmithController {
     	if(validToken)
 		{	
     		try {
-				System.out.println(data.getUseraccountid());
+//				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUseraccountid());
 				uaa = uaar.getReferenceByUserid(data.getUserid());
-
+				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUserid());
 				ui.setFirstname(uaa.getFirstname());
 				ui.setLastname(uaa.getLastname());
 				ui.setStatus(uaa.getStatus());
@@ -258,7 +259,6 @@ public class JobsmithController {
     	
     	return entity;
     } 	
-
 	
     public boolean checkToken(String authorizationHeader)
     {
@@ -377,10 +377,10 @@ public class JobsmithController {
 			r = rList.get(i);
 			ReportInfo ri = new ReportInfo();
 			ri.setCategoryid(categoryid);
-			ri.setRep_repor_name(r.getRep_repor_name());
-			ri.setRep_report_description(r.getRep_report_description());
-			ri.setRep_report_id(r.getRep_report_id());
-			ri.setRep_report_type(r.getRep_report_type());
+			ri.setRep_repor_name(r.getRep_ReportName());
+			ri.setRep_report_description(r.getRep_ReportDescription());
+			ri.setRep_report_id(r.getRep_ReportId());
+			ri.setRep_report_type(r.getRep_ReportType());
 			riList.add(ri);
 		}		
 		return riList;
@@ -414,7 +414,12 @@ public class JobsmithController {
     		try {
     			System.out.println(data.getUseraccountid());
     			uaa = uaar.getReferenceByUserid(data.getUserid());  
-    			
+				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUserid());
+				ui.setFirstname(uaa.getFirstname());
+				ui.setLastname(uaa.getLastname());
+				ui.setStatus(uaa.getStatus());
+				ui.setStatusdate(uaa.getStatusdate());   
+   		
     			jrr.save(jr.createJobsmithReport(data));
     			jrr.flush();
     			int id = jr.getJobsmith_reportid();
@@ -507,12 +512,17 @@ public class JobsmithController {
     			try
     			{ 
     				uaa = uaar.getReferenceByUserid(userData.getUserid());   
-//        			String userid = uaa.getUserid();
-//       			Long useraccountid = uaa.getUseraccountid();
-//        			System.out.println(" -------------------------------------- "+userid+"   ^^^^^^^^^^^^ ----- "+data.getUserid());
-//        			System.out.println(" -------------------------------------- "+useraccountid+"   ^^^^^^^^^^^^ ----- "+data.getUseraccountid());
-    				
+    				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+userData.getUserid());
+    				ui.setFirstname(uaa.getFirstname());
+    				ui.setLastname(uaa.getLastname());
+    				ui.setStatus(uaa.getStatus());
+    				ui.setStatusdate(uaa.getStatusdate());   
+   				
     		    	List<JobsmithPremadeReport> jpr =  getData(userData.getReportId());
+    		    	
+    	    		sr.setValid(true);
+    				sr.setStatusCode(1);
+    				sr.setMessage("Jobsmith Premade Report with Authentic Token ");     		    	
     		    	
     		    	jprr.setJobsmithPremadeReport(jpr);
     		    	
@@ -561,8 +571,7 @@ public class JobsmithController {
 			rjpr.setData(null);
 			rjpr.setStatus(sr);		
 			entity = new ResponseEntity<>(rjpr, headers, HttpStatus.UNAUTHORIZED);
-    	}
-	
+    	}	
 		return entity;
 	}
 	
@@ -575,7 +584,7 @@ public class JobsmithController {
 		String sqlQuery = """				
 			SELECT 
 			  a.jobsmith_premade_reportid, 
-			  rep_repor_name, 
+			   b.Rep_ReportName, 
 			  a.jobsmith_categoryid, 
 			  e.jobsmith_category, 
 			  c.RepCap_CapabilityId, 
@@ -584,7 +593,7 @@ public class JobsmithController {
 			  c.RepCap_Sequence 
 			FROM 
 			  jobsmith_premade_reports_tbl a 
-			  inner join reports_tbl b ON a.jobsmith_premade_reportid = b.rep_report_id 
+			  inner join reports_tbl b ON a.jobsmith_premade_reportid = b.Rep_ReportId
 			  inner JOIN reportcapability_tbl c ON a.jobsmith_premade_reportid = c.RepCap_ReportId 
 			  INNER JOIN capability_tbl d ON c.RepCap_CapabilityId = d.Cap_CapabilityId 
 			  INNER JOIN jobsmith_category_tbl e ON a.jobsmith_categoryid = e.jobsmith_categoryid 
@@ -598,7 +607,7 @@ public class JobsmithController {
 			      AND rc.RepCap_Sequence <= c.RepCap_Sequence
 			  ) <= 5				  		
 			   ORDER BY 
-			 a.jobsmith_categoryid, c.RepCap_Weightage, c.RepCap_Sequence	
+			 a.jobsmith_categoryid, c.RepCap_Weightage, c.RepCap_Sequence		
 		""";
 
 		System.out.println(sqlQuery);
@@ -643,17 +652,18 @@ public class JobsmithController {
     			try
     			{
     				uaa = uaar.getReferenceByUserid(data.getUserid());  
-//        			String userid = uaa.getUserid();
-//       			Long useraccountid = uaa.getUseraccountid();
-//        			System.out.println(" -------------------------------------- "+userid+"   ^^^^^^^^^^^^ ----- "+data.getUserid());
-//        			System.out.println(" -------------------------------------- "+useraccountid+"   ^^^^^^^^^^^^ ----- "+data.getUseraccountid());
+    				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUserid());
+    				ui.setFirstname(uaa.getFirstname());
+    				ui.setLastname(uaa.getLastname());
+    				ui.setStatus(uaa.getStatus());
+    				ui.setStatusdate(uaa.getStatusdate());   
+    				
                 	List<SavedJobReport> jpr =  getDataSavedJobReport();
-                	
                 	jprr.setSavedJobReport(jpr);
                 	
-            		sr.setValid(true);
-        			sr.setStatusCode(1);
-        			sr.setMessage("Success");                	
+    				sr.setValid(true);
+    				sr.setStatusCode(1);
+    				sr.setMessage("Saved Job Reportt with Authentic Token ");                	
             		
                 	rsjr.setStatus(sr);
                 	rsjr.setData(jprr);
@@ -762,15 +772,19 @@ public class JobsmithController {
 		{
     		try {
     			try
-    			{ 
+    			{    				
     				uaa = uaar.getReferenceByUserid(userData.getUserid());  
-//        			String userid = uaa.getUserid();
-//       			Long useraccountid = uaa.getUseraccountid();
-//        			System.out.println(" -------------------------------------- "+userid+"   ^^^^^^^^^^^^ ----- "+data.getUserid());
-//        			System.out.println(" -------------------------------------- "+useraccountid+"   ^^^^^^^^^^^^ ----- "+data.getUseraccountid());
-    				
+    				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+userData.getUserid());
+    				ui.setFirstname(uaa.getFirstname());
+    				ui.setLastname(uaa.getLastname());
+    				ui.setStatus(uaa.getStatus());
+    				ui.setStatusdate(uaa.getStatusdate());   
+   				
     		    	List<SavedJobReportsExpansion> jpr =  getDataSavedJobReportExpansion(userData.getReportId());
     		    	
+		    		sr.setValid(true);
+					sr.setStatusCode(1);
+					sr.setMessage("Saved Job Reports Expansio with Authentic Token");
     		    	
     		    	jprr.setSavedJobReportsExpansion(jpr);
     		    	
@@ -889,17 +903,19 @@ public class JobsmithController {
     			try
     			{
     				uaa = uaar.getReferenceByUserid(data.getUserid());  
-//        			String userid = uaa.getUserid();
-//       			Long useraccountid = uaa.getUseraccountid();
-//        			System.out.println(" -------------------------------------- "+userid+"   ^^^^^^^^^^^^ ----- "+data.getUserid());
-//        			System.out.println(" -------------------------------------- "+useraccountid+"   ^^^^^^^^^^^^ ----- "+data.getUseraccountid());
+    				System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUserid());
+    				ui.setFirstname(uaa.getFirstname());
+    				ui.setLastname(uaa.getLastname());
+    				ui.setStatus(uaa.getStatus());
+    				ui.setStatusdate(uaa.getStatusdate());    				
+    				
                 	List<PreMadeReport> jpr =  getDataPreMadeReport(data.getCategoryId());
                 	
                 	jprr.setPreMadeReport(jpr);
                 	
             		sr.setValid(true);
         			sr.setStatusCode(1);
-        			sr.setMessage("Success");                	
+        			sr.setMessage("Premade Report with Authentic Token");                	
             		
                 	rpmr.setStatus(sr);
                 	rpmr.setData(jprr);
@@ -956,18 +972,18 @@ public class JobsmithController {
 		List<PreMadeReport> listJPR = new ArrayList<PreMadeReport>();
 		String [][]data;		
 		String sqlQuery = """	
-				SELECT 
-				  a.jobsmith_premade_reportid, 
-				  rep_repor_name , 
-				  a.jobsmith_categoryid 
-				FROM 
-				  jobsmith_premade_reports_tbl a 
-				  inner join reports_tbl b ON a.jobsmith_premade_reportid = b.rep_report_id 
-				  inner JOIN reportcapability_tbl c ON a.jobsmith_premade_reportid = c.RepCap_ReportId 
-				WHERE 
-				  a.jobsmith_categoryid = """+categoryId+""" 
-				  AND a.archived = 0 
-				GROUP BY 
+				SELECT
+				  a.jobsmith_premade_reportid,
+				  b.Rep_ReportName ,
+				  a.jobsmith_categoryid
+				FROM
+				  jobsmith_premade_reports_tbl a
+				  inner join reports_tbl b ON a.jobsmith_premade_reportid = b.Rep_ReportId
+				  inner JOIN reportcapability_tbl c ON a.jobsmith_premade_reportid = c.RepCap_ReportId
+				WHERE
+				  a.jobsmith_categoryid ="""+categoryId+""" 
+						  AND a.archived = 0 
+						GROUP BY
 				  jobsmith_premade_reportid
 				""";
 		System.out.println(sqlQuery);
@@ -994,5 +1010,157 @@ public class JobsmithController {
 		
 		return jobSearchResult;
 	}	
+	
+	@PostMapping("/updatearchive")
+	public ResponseEntity<StatusResponse> updateArchive(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data)
+	{
+		ResponseEntity<StatusResponse> entity;
+    	HttpHeaders headers = new HttpHeaders();
+    	
+    	StatusResponse sr = new StatusResponse();
+    	
+    	UserAccountsAuth uaa = new UserAccountsAuth();
+    	
+		UserInfo ui = new UserInfo();    	
+    	
+    	boolean validToken = false;
+    	
+    	validToken = checkToken(authorizationHeader);
+    	
+    	if(validToken)
+		{
+    		try {
+    			try
+    			{ 
+    				uaa = uaar.getReferenceByUserid(data.getUserid());   
+    				
+    				ui.setFirstname(uaa.getFirstname());
+    				ui.setLastname(uaa.getLastname());
+    				ui.setStatus(uaa.getStatus());
+			    	ui.setStatusdate(uaa.getStatusdate());      	
+			    	
+			    	
+					DBUpdate dbi = new DBUpdate();
+					sr = dbi.updateObject(data);
+					
+					if(sr.isValid() == true)
+					{
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+					}
+					else
+					{
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+					}
+    			}catch(NullPointerException npex)
+    			{
+    				npex.printStackTrace();
+        			System.out.println(npex.getMessage());			
+            		sr.setValid(false);
+        			sr.setStatusCode(0);
+        			sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   
+        			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+    			}catch(Exception ex)
+    			{
+        			ex.printStackTrace();
+        			System.out.println(ex.getMessage());			
+            		sr.setValid(false);
+        			sr.setStatusCode(0);
+        			sr.setMessage("Unauthentic Token Or Unauthentic User");
+        			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    			}  		
+    		}catch (Exception ex) {
+    			ex.printStackTrace();
+    			System.out.println(ex.getMessage());			
+        		sr.setValid(false);
+    			sr.setStatusCode(0);
+    			sr.setMessage("Unauthentic Token Or Unauthentic User");
+    			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    		}
+		}	
+    	else
+    	{
+    		sr.setValid(false);
+			sr.setStatusCode(0);
+			sr.setMessage("Unauthentic Token");	
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    	}		
+		return entity;
+	}
+	
+	
+	
+	@PostMapping("/udpatereportstatus")
+	public ResponseEntity<StatusResponse>udpatereportstatus(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data) {
+
+		ResponseEntity<StatusResponse> entity; HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();
+
+		UserAccountsAuth uaa = new UserAccountsAuth();
+
+		UserInfo ui = new UserInfo();    	
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if(validToken)
+		{
+			try {
+				try
+				{ 
+					uaa = uaar.getReferenceByUserid(data.getUserid());   
+
+					ui.setFirstname(uaa.getFirstname());
+					ui.setLastname(uaa.getLastname());
+					ui.setStatus(uaa.getStatus());
+					ui.setStatusdate(uaa.getStatusdate());      	
+
+					DBUpdate dbi = new DBUpdate();
+					sr = dbi.udpatereportstatus(data);
+
+					if(sr.isValid() == true) { 
+						entity = new ResponseEntity<>(sr, headers,HttpStatus.OK); 
+					}
+					else { 
+						entity = new ResponseEntity<>(sr, headers,HttpStatus.UNAUTHORIZED);
+					}
+				}catch(NullPointerException npex)
+				{
+					npex.printStackTrace();
+					System.out.println(npex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+				}catch(Exception ex)
+				{
+					ex.printStackTrace();
+					System.out.println(ex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or Unauthentic User");
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+				}  		
+			}catch (Exception ex) {
+				ex.printStackTrace();
+				System.out.println(ex.getMessage());			
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or Unauthentic User");
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+			}
+		}	
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(0);
+			sr.setMessage("Unauthentic Token");	
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+		}		
+
+		return entity;
+	}
+
 	
 }
