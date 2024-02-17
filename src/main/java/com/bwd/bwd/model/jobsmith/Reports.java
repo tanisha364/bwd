@@ -1,21 +1,15 @@
 package com.bwd.bwd.model.jobsmith;
 
+import java.beans.JavaBean;
+
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(name = "reports_tbl")
-@Entity
+@JavaBean
 @Getter
 @Setter
 public class Reports {
-	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
 	@Column(name = "Rep_ReportId")
 	private int Rep_ReportId;
 	
@@ -40,7 +34,6 @@ public class Reports {
 	@Column(name = "Rep_PersonalityViewable")
 	private int Rep_PersonalityViewable;
 	
-//	private long categoryid;
 	public Reports()
 	{
 		
@@ -57,4 +50,27 @@ public class Reports {
 		this.Rep_ReportCode = Rep_ReportCode_;
 		this.Rep_PersonalityViewable = Rep_PersonalityViewable_;
 	}
+	
+	public Reports getObject(String data[]) {
+		
+		this.Rep_ReportId = Integer.parseInt(data[0]);
+		this.Rep_ReportName= data[1];
+		this.Rep_ReportDescription = data[2];
+		this.Rep_ReportType = data[3];
+		this.Rep_Deleted = Byte.parseByte(data[4]);
+		this.Rep_ReportIntroduction = data[5];
+		this.Rep_ReportCode = data[6];
+		this.Rep_PersonalityViewable = Integer.parseInt(data[7]);
+		
+		return this;
+	}
 }
+
+
+
+
+
+
+
+
+

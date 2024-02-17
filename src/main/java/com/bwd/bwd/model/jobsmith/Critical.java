@@ -12,4 +12,6 @@ public class Critical {
 	public String capabilityid;
 	public String weightage;
 	public String sequence;
+	private int editstatus; 
+	private int jobsmith_report_capabilityid;	
 }

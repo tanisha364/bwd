@@ -14,6 +14,7 @@ import lombok.Setter;
 @Setter
 @JavaBean
 public class JobsmithReportRequest {
+	public int jobsmith_reportid;
 	public String jobsmith_report_name;
 	public String jobsmith_report_note;
 	public int companyid;
@@ -22,5 +23,5 @@ public class JobsmithReportRequest {
 	
 	public ArrayList<Critical> critical;
 	public ArrayList<Important> important;
-	public ArrayList<Nicetohave> nicetohave;	
+	public ArrayList<Nicetohave> nicetohave;		
 }

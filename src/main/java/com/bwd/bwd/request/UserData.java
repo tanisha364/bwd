@@ -14,4 +14,6 @@ public class UserData {
 	private String findValue;
 	private int archived;
 	private String report_status;
+	private int locked;	
+	private String jobsmithReportName;	
 }
