@@ -17,31 +17,7 @@ public class LoginServicesImpl implements LoginServices	 {
 	UserAccountsRepo uar;
 	
 	@Autowired
-	LoginResponse lr;
-	
-//	@Override
-//	public LoginResponse checkUser(LoginData ld) 
-//	{		
-//		LoginResponse lr = new LoginResponse();
-//		lr.setEmail(ld.getEmail());
-//		lr.setPassword(ld.getPassword());
-//		lr.setMessage("Great you can go ahead");
-//		lr.setUserStatus(1);
-//		lr.setValid(true);
-//		
-//		return lr;
-//	}
-//
-//	@Override
-//	public LoginResponse checkEmail(LoginData ld) {
-//		LoginResponse lr = new LoginResponse();
-//
-//		UserAccountsAuth ua = (UserAccountsAuth) uar.findByEmail(ld.getEmail());
-//		lr.setUserStatus(ua.getUserlevel());		
-//		
-//		return lr;
-//	}
-	
+	LoginResponse lr;	
 	
 	@Override
 	public LoginResponse checkUser(LoginData ld) 
@@ -66,27 +42,6 @@ public class LoginServicesImpl implements LoginServices	 {
 		return lr;
 	}
 
-	@Override
-	public LoginResponse checkPassword(LoginData ld, UserAccounts ua) {
-		// TODO Auto-generated method stub		
-		LoginResponse lr = new LoginResponse();
-		if(ua.getPassword().equals(ld.getPassword()))
-			
-		if(comparePassword(ld.getPassword(),ua.getHashpassword()))	
-		{
-			lr.setPassword(ua.getHashpassword());
-			lr.setUserStatus(2);      // 2 -  if password matched
-		}
-		else
-		{
-			lr.setPassword(ld.getPassword());
-			lr.setUserStatus(3);     // 3 -  if password not matched
-		}
-			
-		return lr;
-	}
-	
-	
 
 	public LoginResponse checkPasswordText(LoginData ld, UserAccounts ua) {
 		// TODO Auto-generated method stub		
@@ -128,8 +83,6 @@ public class LoginServicesImpl implements LoginServices	 {
 	public static void main(String [] args)
 	{
 		LoginServicesImpl lsi = new LoginServicesImpl();
-	//	System.out.println(lsi.getHash("rka"));   // $2a$10$VKV9NPKXdNVNI23Gy4lgTuZm0IAgEJL9HWcrwqwYekKIH.qlywFfS
-		System.out.println(lsi.comparePassword("rka","$2a$10$VKV9NPKXdNVNI23Gy4lgTuZm0IAgEJL9HWcrwqwYekKIH.qlywFfS"));
 	}
 
 

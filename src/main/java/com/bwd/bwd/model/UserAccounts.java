@@ -41,8 +41,8 @@ public class UserAccounts {
 	@Column(name = "lastname")	
 	private String lastname;
 	
-	@Column(name = "hashpassword")	
-	private String hashpassword;		
+	//@Column(name = "hashpassword")	
+	//private String hashpassword;		
 	
 	
 	/*

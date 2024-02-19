@@ -16,5 +16,4 @@ public interface LoginServices
 	
 	public LoginResponse checkEmail(LoginData ld);	
 	
-	public LoginResponse checkPassword(LoginData ld,UserAccounts lr);	
 }
