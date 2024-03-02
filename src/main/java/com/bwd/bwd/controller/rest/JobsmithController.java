@@ -3,6 +3,7 @@ package com.bwd.bwd.controller.rest;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -10,18 +11,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
-
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bwd.bwd.controller.auth.UserAuthController;
+import com.bwd.bwd.db.DBOperation;
+import com.bwd.bwd.db.DBSearch;
+import com.bwd.bwd.db.DBUpdate;
 import com.bwd.bwd.model.Category;
-
 import com.bwd.bwd.model.auth.UserAccountsAuth;
+import com.bwd.bwd.model.jobsmith.Critical;
+import com.bwd.bwd.model.jobsmith.Important;
+import com.bwd.bwd.model.jobsmith.JobSearchResult;
+import com.bwd.bwd.model.jobsmith.JobsmithCapabilities;
+import com.bwd.bwd.model.jobsmith.JobsmithReport;
+import com.bwd.bwd.model.jobsmith.JobsmithReportCapability;
+import com.bwd.bwd.model.jobsmith.Nicetohave;
+import com.bwd.bwd.model.jobsmith.Reports;
 import com.bwd.bwd.repository.CategoryRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.repository.jobsmith.JobsmithCapabilityRepo;
@@ -59,18 +69,8 @@ import com.bwd.bwd.response.TokenResponse;
 import com.bwd.bwd.response.UserDataResponse;
 import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
-import com.bwd.bwd.controller.auth.UserAuthController;
-import com.bwd.bwd.db.DBOperation;
-import com.bwd.bwd.db.DBSearch;
-import com.bwd.bwd.db.DBUpdate;
-import com.bwd.bwd.model.jobsmith.Critical;
-import com.bwd.bwd.model.jobsmith.Important;
-import com.bwd.bwd.model.jobsmith.JobSearchResult;
-import com.bwd.bwd.model.jobsmith.JobsmithCapabilities;
-import com.bwd.bwd.model.jobsmith.JobsmithReport;
-import com.bwd.bwd.model.jobsmith.JobsmithReportCapability;
-import com.bwd.bwd.model.jobsmith.Nicetohave;
-import com.bwd.bwd.model.jobsmith.Reports;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 @CrossOrigin("*")
@@ -393,7 +393,7 @@ public class JobsmithController {
 	}
 	
 	@PostMapping("/savejobsmithreports")
-	public  ResponseEntity<ResponseSaveJobsmithReports>  saveJobsmithReports(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody JobsmithReportRequest data){
+	public  ResponseEntity<ResponseSaveJobsmithReports>  saveJobsmithReports(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody JobsmithReportRequest data, HttpServletRequest request){
 		String message = "";
 		
 		ResponseEntity<ResponseSaveJobsmithReports> entity;
@@ -426,6 +426,28 @@ public class JobsmithController {
 				ui.setStatus(uaa.getStatus());
 				ui.setStatusdate(uaa.getStatusdate());   
    		
+				   // Check permission
+                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+                                         "FROM jobsmith_user_profile_tbl jup " +
+                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+                
+                // Get the endpoint being hit
+                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
+
+                boolean hasPermission = false;
+                for (Map<String, Object> row : permissionData) {
+                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+                    if (functionalEndpoint.equals(endpoint)) {
+                        hasPermission = true;
+                        break;
+                    }
+                }
+
+                if (hasPermission) {
     			jrr.save(jr.createJobsmithReport(data));
     			jrr.flush();
     			int id = jr.getJobsmith_reportid();
@@ -466,7 +488,16 @@ public class JobsmithController {
     			sr.setStatusCode(1);
     			sr.setMessage(message);    			
     			
-    		}catch (Exception ex) {
+    		}
+                else {
+                    // User doesn't have permission
+                    sr.setValid(false);
+                    sr.setStatusCode(11);
+                    sr.setMessage("User doesn't have permission to access this resource");                  
+                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.FORBIDDEN);
+                }
+
+            }catch (Exception ex) {
     			ex.printStackTrace();
     			System.out.println(ex.getMessage());			
         		sr.setValid(false);
@@ -644,7 +675,7 @@ public class JobsmithController {
 	}
 
 	@PostMapping("/getsavedjobreport")
-	public ResponseEntity<ResponseSavedJobReport> getSavedJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data)
+	public ResponseEntity<ResponseSavedJobReport> getSavedJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data, HttpServletRequest request)
 	{
 		System.out.println("C  A     L        L -------- getsavedjobreport");
 		ResponseEntity<ResponseSavedJobReport> entity;
@@ -676,6 +707,28 @@ public class JobsmithController {
     				ui.setStatus(uaa.getStatus());
     				ui.setStatusdate(uaa.getStatusdate());   
     				
+    				 // Check permission
+	                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+	                                         "FROM jobsmith_user_profile_tbl jup " +
+	                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+	                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+	                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+	                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+	                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+	                
+	                // Get the endpoint being hit
+	                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
+
+	                boolean hasPermission = false;
+	                for (Map<String, Object> row : permissionData) {
+	                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+	                    if (functionalEndpoint.equals(endpoint)) {
+	                        hasPermission = true;
+	                        break;
+	                    }
+	                }
+
+	                if (hasPermission) {
                 	List<SavedJobReport> jpr =  getDataSavedJobReport();
                 	jprr.setSavedJobReport(jpr);
                 	
@@ -686,7 +739,19 @@ public class JobsmithController {
                 	rsjr.setStatus(sr);
                 	rsjr.setData(jprr);
                 	entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);       				
-    			}catch(NullPointerException npex)
+    			}
+	                else {
+	                    // User doesn't have permission
+	                    sr.setValid(false);
+	                    sr.setStatusCode(11);
+	                    sr.setMessage("User doesn't have permission to access this resource");
+	                    rsjr.setData(null);
+	                    rsjr.setStatus(sr);
+	                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.FORBIDDEN);
+	                }
+
+	            }
+    			catch(NullPointerException npex)
     			{
     				npex.printStackTrace();
         			System.out.println(npex.getMessage());			
@@ -1122,8 +1187,12 @@ public class JobsmithController {
 		return jobSearchResult;
 	}	
 	
+	
+	
+	
+	
 	@PostMapping("/updatearchive")
-	public ResponseEntity<StatusResponse> updateArchive(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data)
+	public ResponseEntity<StatusResponse> updateArchive(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data, HttpServletRequest request)
 	{
 		ResponseEntity<StatusResponse> entity;
     	HttpHeaders headers = new HttpHeaders();
@@ -1139,69 +1208,144 @@ public class JobsmithController {
     	validToken = checkToken(authorizationHeader);
     	
     	if(validToken)
-		{
+    	{
     		try {
     			try
     			{ 
     				uaa = uaar.getReferenceByUserid(data.getUserid());   
-    				
+
     				ui.setFirstname(uaa.getFirstname());
     				ui.setLastname(uaa.getLastname());
     				ui.setStatus(uaa.getStatus());
-			    	ui.setStatusdate(uaa.getStatusdate());      	
-			    	
-			    	
-					DBUpdate dbi = new DBUpdate();
-					sr = dbi.updateObject(data);
-					
-					if(sr.isValid() == true)
-					{
-						entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
-					}
-					else
-					{
-						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
-					}
+    				ui.setStatusdate(uaa.getStatusdate());      	
+
+    				// Check permission
+    				String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+    						"FROM jobsmith_user_profile_tbl jup " +
+    						"JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+    						"JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+    						"JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+    						"WHERE ua.userid = ? AND jpt.IsPermission = 1";
+    				List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+
+    				// Get the endpoint being hit
+    				String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
+
+    				boolean hasPermission = false;
+    				for (Map<String, Object> row : permissionData) {
+    					String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+    					if (functionalEndpoint.equals(endpoint)) {
+    						hasPermission = true;
+    						break;
+    					}
+    				}
+
+    				if (hasPermission) {
+
+    					String profileIdQuery = "SELECT jup.jobsmith_profileId FROM jobsmith_user_profile_tbl jup JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid WHERE userid = ?";
+    					List<Map<String, Object>> profileIdData = jdbcTemplate.queryForList(profileIdQuery, data.getUserid());	         	
+    					int profileAccountId = (int) profileIdData.get(0).get("jobsmith_profileId");
+
+    					if(profileAccountId==2) {
+
+    						// Get the user account id associated with the user's userid
+    						String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
+    						List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
+    						long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+
+    						// Get the user account id associated with the report
+    						String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
+    						List<Map<String, Object>> reportAccountIdData = jdbcTemplate.queryForList(reportAccountIdQuery, data.getReportId());	         	
+    						int accessibleReportAccountId = (int) reportAccountIdData.get(0).get("useraccountid");
+    						
+    						if (accessibleReportAccountId == accessibleUserAccountId) {
+
+    							DBUpdate dbi = new DBUpdate();
+    							sr = dbi.updateObject(data);
+
+    							if(sr.isValid() == true)
+    							{
+    								entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+    							}
+    							else
+    							{
+    								entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    							}
+    						} else {
+    							// User doesn't have permission to update this report
+    							sr.setValid(false);
+    							sr.setStatusCode(0);
+    							sr.setMessage("User doesn't have permission to update other user report");
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    						}
+    					}
+    					else {
+    						DBUpdate dbi = new DBUpdate();
+    						sr = dbi.updateObject(data);
+
+    						if(sr.isValid() == true)
+    						{
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+    						}
+    						else
+    						{
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    						}
+    					}
+    				}else {
+    					// User doesn't have permission
+    					sr.setValid(false);
+    					sr.setStatusCode(0);
+    					sr.setMessage("User doesn't have permission to access this resource");
+    					entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    				}			
     			}catch(NullPointerException npex)
     			{
     				npex.printStackTrace();
-        			System.out.println(npex.getMessage());			
-            		sr.setValid(false);
-        			sr.setStatusCode(0);
-        			sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   
-        			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+    				System.out.println(npex.getMessage());			
+    				sr.setValid(false);
+    				sr.setStatusCode(0);
+    				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   
+    				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
     			}catch(Exception ex)
     			{
-        			ex.printStackTrace();
-        			System.out.println(ex.getMessage());			
-            		sr.setValid(false);
-        			sr.setStatusCode(0);
-        			sr.setMessage("Unauthentic Token Or Unauthentic User");
-        			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    				ex.printStackTrace();
+    				System.out.println(ex.getMessage());			
+    				sr.setValid(false);
+    				sr.setStatusCode(0);
+    				sr.setMessage("Unauthentic Token Or Unauthentic User");
+    				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
     			}  		
     		}catch (Exception ex) {
     			ex.printStackTrace();
     			System.out.println(ex.getMessage());			
-        		sr.setValid(false);
+    			sr.setValid(false);
     			sr.setStatusCode(0);
     			sr.setMessage("Unauthentic Token Or Unauthentic User");
     			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
     		}
-		}	
+    	}	
     	else
     	{
     		sr.setValid(false);
-			sr.setStatusCode(0);
-			sr.setMessage("Unauthentic Token");	
-			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    		sr.setStatusCode(0);
+    		sr.setMessage("Unauthentic Token");	
+    		entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
     	}		
-		return entity;
+    	return entity;
 	}
 
 	
 	
+	
+	
+	
+	
+
+	
+	
 	@PostMapping("/udpatereportstatus")
-	public ResponseEntity<StatusResponse>udpatereportstatus(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data) {
+	public ResponseEntity<StatusResponse>udpatereportstatus(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data, HttpServletRequest request) {
 
 		ResponseEntity<StatusResponse> entity; HttpHeaders headers = new HttpHeaders();
 
@@ -1209,6 +1353,8 @@ public class JobsmithController {
 
 		UserAccountsAuth uaa = new UserAccountsAuth();
 
+		
+		
 		UserInfo ui = new UserInfo();    	
 
 		boolean validToken = false;
@@ -1227,16 +1373,83 @@ public class JobsmithController {
 					ui.setStatus(uaa.getStatus());
 					ui.setStatusdate(uaa.getStatusdate());      	
 
-					DBUpdate dbi = new DBUpdate();
-					sr = dbi.udpatereportstatus(data);
+				    // Check permission
+	                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+	                                         "FROM jobsmith_user_profile_tbl jup " +
+	                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+	                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+	                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+	                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+	                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+	                
+	                // Get the endpoint being hit
+	                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
 
-					if(sr.isValid() == true) { 
-						entity = new ResponseEntity<>(sr, headers,HttpStatus.OK); 
-					}
-					else { 
-						entity = new ResponseEntity<>(sr, headers,HttpStatus.UNAUTHORIZED);
-					}
-				}catch(NullPointerException npex)
+	                boolean hasPermission = false;
+	                for (Map<String, Object> row : permissionData) {
+	                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+	                    if (functionalEndpoint.equals(endpoint)) {
+	                        hasPermission = true;
+	                        break;
+	                    }
+	                }
+
+	                if (hasPermission) {
+	                	String profileIdQuery = "SELECT jup.jobsmith_profileId FROM jobsmith_user_profile_tbl jup JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid WHERE userid = ?";
+    					List<Map<String, Object>> profileIdData = jdbcTemplate.queryForList(profileIdQuery, data.getUserid());	         	
+    					int profileAccountId = (int) profileIdData.get(0).get("jobsmith_profileId");
+
+    					if(profileAccountId==2) {
+
+    						// Get the user account id associated with the user's userid
+    						String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
+    						List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
+    						long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+
+    						// Get the user account id associated with the report
+    						String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
+    						List<Map<String, Object>> reportAccountIdData = jdbcTemplate.queryForList(reportAccountIdQuery, data.getReportId());	         	
+    						int accessibleReportAccountId = (int) reportAccountIdData.get(0).get("useraccountid");
+    						
+    						if (accessibleReportAccountId == accessibleUserAccountId) {
+
+						DBUpdate dbi = new DBUpdate();
+						sr = dbi.udpatereportstatus(data);
+
+						if(sr.isValid() == true) { 
+							entity = new ResponseEntity<>(sr, headers,HttpStatus.OK); 
+						}
+						else { 
+							entity = new ResponseEntity<>(sr, headers,HttpStatus.UNAUTHORIZED);
+						}
+    						} else {
+    							// User doesn't have permission to update this report
+    							sr.setValid(false);
+    							sr.setStatusCode(0);
+    							sr.setMessage("User doesn't have permission to update other user report");
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    						}
+    					}
+    					else {
+    						DBUpdate dbi = new DBUpdate();
+    						sr = dbi.udpatereportstatus(data);
+
+    						if(sr.isValid() == true) { 
+    							entity = new ResponseEntity<>(sr, headers,HttpStatus.OK); 
+    						}
+    						else { 
+    							entity = new ResponseEntity<>(sr, headers,HttpStatus.UNAUTHORIZED);
+    						}
+    					}
+    				}else {
+    					// User doesn't have permission
+    					sr.setValid(false);
+    					sr.setStatusCode(0);
+    					sr.setMessage("User doesn't have permission to access this resource");
+    					entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    				}			
+    			}
+	                catch(NullPointerException npex)
 				{
 					npex.printStackTrace();
 					System.out.println(npex.getMessage());			
@@ -1272,9 +1485,19 @@ public class JobsmithController {
 
 		return entity;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	@PostMapping("/updatelock")
-	public ResponseEntity<StatusResponse> updateLock(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data)
+	public ResponseEntity<StatusResponse> updateLock(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data, HttpServletRequest request)
 	{
 		ResponseEntity<StatusResponse> entity;
     	HttpHeaders headers = new HttpHeaders();
@@ -1300,19 +1523,86 @@ public class JobsmithController {
     				ui.setLastname(uaa.getLastname());
     				ui.setStatus(uaa.getStatus());
 			    	ui.setStatusdate(uaa.getStatusdate());      	
+			    	 // Check permission
+	                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+	                                         "FROM jobsmith_user_profile_tbl jup " +
+	                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+	                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+	                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+	                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+	                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+	                
+	                // Get the endpoint being hit
+	                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
+
+	                boolean hasPermission = false;
+	                for (Map<String, Object> row : permissionData) {
+	                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+	                    if (functionalEndpoint.equals(endpoint)) {
+	                        hasPermission = true;
+	                        break;
+	                    }
+	                }
+
+	                if (hasPermission) {
 			    	
-			    	
-					DBUpdate dbi = new DBUpdate();
-					sr = dbi.updateLock(data);
-					
-					if(sr.isValid() == true)
-					{
-						entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
-					}
-					else
-					{
-						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
-					}
+	                	String profileIdQuery = "SELECT jup.jobsmith_profileId FROM jobsmith_user_profile_tbl jup JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid WHERE userid = ?";
+    					List<Map<String, Object>> profileIdData = jdbcTemplate.queryForList(profileIdQuery, data.getUserid());	         	
+    					int profileAccountId = (int) profileIdData.get(0).get("jobsmith_profileId");
+
+    					if(profileAccountId==2) {
+
+    						// Get the user account id associated with the user's userid
+    						String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
+    						List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
+    						long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+
+    						// Get the user account id associated with the report
+    						String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
+    						List<Map<String, Object>> reportAccountIdData = jdbcTemplate.queryForList(reportAccountIdQuery, data.getReportId());	         	
+    						int accessibleReportAccountId = (int) reportAccountIdData.get(0).get("useraccountid");
+    						
+    						if (accessibleReportAccountId == accessibleUserAccountId) {
+
+    							DBUpdate dbi = new DBUpdate();
+    							sr = dbi.updateLock(data);
+
+    							if(sr.isValid() == true)
+    							{
+    								entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+    							}
+    							else
+    							{
+    								entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    							}
+    						} else {
+    							// User doesn't have permission to update this report
+    							sr.setValid(false);
+    							sr.setStatusCode(0);
+    							sr.setMessage("User doesn't have permission to update other user report");
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    						}
+    					}
+    					else {
+    						DBUpdate dbi = new DBUpdate();
+    						sr = dbi.updateLock(data);
+
+    						if(sr.isValid() == true)
+    						{
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+    						}
+    						else
+    						{
+    							entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+    						}
+    					}
+    				}else {
+    					// User doesn't have permission
+    					sr.setValid(false);
+    					sr.setStatusCode(0);
+    					sr.setMessage("User doesn't have permission to access this resource");
+    					entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+    				}			
     			}catch(NullPointerException npex)
     			{
     				npex.printStackTrace();
@@ -1350,7 +1640,7 @@ public class JobsmithController {
 	}
 	
 	@PostMapping("/getsearchjobreport")
-	public ResponseEntity<ResponseSavedJobReport> getSearchJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data)
+	public ResponseEntity<ResponseSavedJobReport> getSearchJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data, HttpServletRequest request)
 	{
 		ResponseEntity<ResponseSavedJobReport> entity;
 		HttpHeaders headers = new HttpHeaders();
@@ -1379,6 +1669,29 @@ public class JobsmithController {
 					ui.setLastname(uaa.getLastname());
 					ui.setStatus(uaa.getStatus());
 					ui.setStatusdate(uaa.getStatusdate());   
+					
+					   // Check permission
+	                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+	                                         "FROM jobsmith_user_profile_tbl jup " +
+	                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+	                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+	                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+	                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+	                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+	                
+	                // Get the endpoint being hit
+	                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
+
+	                boolean hasPermission = false;
+	                for (Map<String, Object> row : permissionData) {
+	                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+	                    if (functionalEndpoint.equals(endpoint)) {
+	                        hasPermission = true;
+	                        break;
+	                    }
+	                }
+
+	                if (hasPermission) {
 
 					List<SavedJobReport> jpr = getDataSearchJobReport(data.getJobsmithReportName());
 					jprr.setSavedJobReport(jpr);
@@ -1390,7 +1703,19 @@ public class JobsmithController {
 					rsjr.setStatus(sr);
 					rsjr.setData(jprr);
 					entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);       				
-				}catch(NullPointerException npex)
+				}
+			     else {
+                    // User doesn't have permission
+                    sr.setValid(false);
+                    sr.setStatusCode(11);
+                    sr.setMessage("User doesn't have permission to access this resource");
+                    rsjr.setData(null);
+                    rsjr.setStatus(sr);
+                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.FORBIDDEN);
+                }
+				}
+
+	                catch(NullPointerException npex)
 				{
 					npex.printStackTrace();
 					System.out.println(npex.getMessage());			
@@ -1470,134 +1795,242 @@ public class JobsmithController {
 	
 	@SuppressWarnings("deprecation")
 	@PostMapping("/geteditjobreport")
-	public ResponseEntity<ResponseEditJob> getJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data) {
-		String message = "";
+	public ResponseEntity<ResponseEditJob> getJobReport(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData data, HttpServletRequest request) {
+	    String message = "";
 
-		ResponseEntity<ResponseEditJob> entity;
-		HttpHeaders headers = new HttpHeaders();	
+	    ResponseEntity<ResponseEditJob> entity;
+	    HttpHeaders headers = new HttpHeaders();    
 
-		ResponseEditJob rsjr = new ResponseEditJob();	    	
-		EditJobResponse editresp = new EditJobResponse();
-		StatusResponse sr = new StatusResponse();
+	    ResponseEditJob rsjr = new ResponseEditJob();            
+	    EditJobResponse editresp = new EditJobResponse();
+	    StatusResponse sr = new StatusResponse();
 
-		//List <Editjobreport> editjobreportList = new ArrayList<Editjobreport>();
-		Editjobreport editjobreport = new Editjobreport();
+	    Editjobreport editjobreport = new Editjobreport();
 
-		int jobreportid = data.getReportId();		    	
+	    int jobreportid = data.getReportId();                  
 
-		UserAccountsAuth uaa = new UserAccountsAuth();
-		UserDataResponse udr = new UserDataResponse();
-		UserInfoResponse uir = new UserInfoResponse();
+	    UserAccountsAuth uaa = new UserAccountsAuth();
+	    UserDataResponse udr = new UserDataResponse();
+	    UserInfoResponse uir = new UserInfoResponse();
 
-		UserInfo ui = new UserInfo();    	
+	    UserInfo ui = new UserInfo();        
 
-		boolean validToken = false;
+	    boolean validToken = false;
 
-		validToken = checkToken(authorizationHeader);
+	    validToken = checkToken(authorizationHeader);
 
-		if(validToken)
-		{	  
-			try {
-				try
-				{
-					uaa = uaar.getReferenceByUserid(data.getUserid());  
-					System.out.println(" ----------  "+data.getUserid());
-					ui.setFirstname(uaa.getFirstname());
-					ui.setLastname(uaa.getLastname());
-					ui.setStatus(uaa.getStatus());
-					ui.setStatusdate(uaa.getStatusdate());  
+	    if (validToken) {   
+	        try {
+	            try {
+	                uaa = uaar.getReferenceByUserid(data.getUserid());  
+	                System.out.println(" ----------  "+data.getUserid());
+	                ui.setFirstname(uaa.getFirstname());
+	                ui.setLastname(uaa.getLastname());
+	                ui.setStatus(uaa.getStatus());
+	                ui.setStatusdate(uaa.getStatusdate());  
 
-					String query1 = "SELECT jobsmith_reportid, jobsmith_report_name, jobsmith_report_note, " +
-							"companyid, useraccountid, report_status " +
-							"FROM jobsmith_report_tbl " +
-							"WHERE archived != -9 AND jobsmith_reportid = ?";
-					jdbcTemplate.query(query1, new Object[]{jobreportid}, rs -> {
-						editjobreport.setJobreportid(rs.getString("jobsmith_reportid"));
-						editjobreport.setJobtitle(rs.getString("jobsmith_report_name"));
-						editjobreport.setJobnote(rs.getString("jobsmith_report_note"));
-						editjobreport.setCompanyid(rs.getString("companyid"));
-						editjobreport.setUseraccountid(rs.getString("useraccountid"));
-						editjobreport.setReportstatus(rs.getString("report_status"));
-					});
+	                // Check permission
+	                String permissionQuery = "SELECT jat.jobsmith_actionId, jat.jobsmith_functional_endpoint " +
+	                                         "FROM jobsmith_user_profile_tbl jup " +
+	                                         "JOIN jobsmith_permission_tbl jpt ON jup.jobsmith_profileId = jpt.jobsmith_profileId " +
+	                                         "JOIN jobsmith_action_tbl jat ON jpt.jobsmith_actionId = jat.jobsmith_actionId " +
+	                                         "JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid " +
+	                                         "WHERE ua.userid = ? AND jpt.IsPermission = 1";
+	                List<Map<String, Object>> permissionData = jdbcTemplate.queryForList(permissionQuery, data.getUserid());
+	                
+	                // Get the endpoint being hit
+	                String endpoint = request.getRequestURI(); // Adjust this based on your endpoint structure
 
-					String query2 = "SELECT a.jobsmith_report_capabilityid,a.capabilityid, b.Cap_Capability, a.weightage, a.sequence " +
-							"FROM jobsmith_report_capability_tbl a " +
-							"INNER JOIN capability_tbl b ON b.Cap_CapabilityId = a.capabilityid " +
-							"INNER JOIN jobsmith_report_tbl c ON c.jobsmith_reportid = a.jobsmith_reportid " +
-							"WHERE a.archived != -9 AND a.jobsmith_reportid = ?";
-					jdbcTemplate.query(query2, new Object[]{jobreportid}, rs -> {
-						Jobedit jobedit = new Jobedit();
-						jobedit.setJobsmith_report_capabilityid(rs.getString("jobsmith_report_capabilityid"));
-						jobedit.setReport_CapabilityId(rs.getString("capabilityid"));
-						jobedit.setCap_Capability(rs.getString("Cap_Capability"));
-						jobedit.setReport_Weightage(rs.getString("weightage"));
-						jobedit.setRepCap_Sequence(rs.getString("sequence"));
+	                boolean hasPermission = false;
+	                for (Map<String, Object> row : permissionData) {
+	                    String functionalEndpoint = (String) row.get("jobsmith_functional_endpoint");
+	                    if (functionalEndpoint.equals(endpoint)) {
+	                        hasPermission = true;
+	                        break;
+	                    }
+	                }
 
-						String weightage = rs.getString("weightage");
-						if (weightage.equalsIgnoreCase("CRITICAL")) {
-							editjobreport.getCritical().add(jobedit);
-						} else if (weightage.equalsIgnoreCase("IMPORTANT")) {
-							editjobreport.getImportant().add(jobedit);
-						} else if (weightage.equalsIgnoreCase("NICE TO HAVE")) {
-							editjobreport.getNicetohave().add(jobedit);
-						}
-					});
+	                if (hasPermission) {
+	                	
+	                	String profileIdQuery = "SELECT jup.jobsmith_profileId FROM jobsmith_user_profile_tbl jup JOIN user_accounts ua ON jup.useraccountid = ua.useraccountid WHERE userid = ?";
+    					List<Map<String, Object>> profileIdData = jdbcTemplate.queryForList(profileIdQuery, data.getUserid());	         	
+    					int profileAccountId = (int) profileIdData.get(0).get("jobsmith_profileId");
 
-					//editjobreportList.add(editjobreport);
-					editresp.setJobReportData(editjobreport);			        
+    					if(profileAccountId==2) {
 
-					sr.setValid(true);
-					sr.setStatusCode(1);
-					sr.setMessage(message); 
+    						// Get the user account id associated with the user's userid
+    						String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
+    						List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
+    						long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
 
-					rsjr.setStatus(sr);
-					rsjr.setData(editresp);
-					entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);	
-				}
-				catch(NullPointerException npex)
-				{
-					npex.printStackTrace();
-					System.out.println(npex.getMessage());			
-					sr.setValid(false);
-					sr.setStatusCode(0);
-					sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");
-					rsjr.setData(null);
-					rsjr.setStatus(sr);
-					entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);    				
+    						// Get the user account id associated with the report
+    						String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
+    						List<Map<String, Object>> reportAccountIdData = jdbcTemplate.queryForList(reportAccountIdQuery, data.getReportId());	         	
+    						int accessibleReportAccountId = (int) reportAccountIdData.get(0).get("useraccountid");
+    						
+    						if (accessibleReportAccountId == accessibleUserAccountId) {
 
-				}catch(Exception ex)
-				{
-					ex.printStackTrace();
-					System.out.println(ex.getMessage());			
-					sr.setValid(false);
-					sr.setStatusCode(0);
-					sr.setMessage("Unauthentic Token Or Unauthentic User");
-					rsjr.setData(null);
-					rsjr.setStatus(sr);
-					entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
-				}  		
-			}catch (Exception ex) {
-				ex.printStackTrace();
-				System.out.println(ex.getMessage());			
-				sr.setValid(false);
-				sr.setStatusCode(0);
-				sr.setMessage("Unauthentic Token Or Unauthentic User");
-				rsjr.setData(null);
-				rsjr.setStatus(sr);
-				entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
-			} 
-		}    	
-		else
-		{
-			sr.setValid(false);
-			sr.setStatusCode(0);
-			sr.setMessage("Unauthentic Token");
-			rsjr.setData(null);
-			rsjr.setStatus(sr);
-			entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
-		} 
-		return entity;
-	}	
+	                    // User has permission, proceed with fetching job report
+	                    String query1 = "SELECT jobsmith_reportid, jobsmith_report_name, jobsmith_report_note, " +
+	                                    "companyid, useraccountid, report_status " +
+	                                    "FROM jobsmith_report_tbl " +
+	                                    "WHERE archived != -9 AND jobsmith_reportid = ?";
+	                    jdbcTemplate.query(query1, new Object[]{jobreportid}, rs -> {
+	                        editjobreport.setJobreportid(rs.getString("jobsmith_reportid"));
+	                        editjobreport.setJobtitle(rs.getString("jobsmith_report_name"));
+	                        editjobreport.setJobnote(rs.getString("jobsmith_report_note"));
+	                        editjobreport.setCompanyid(rs.getString("companyid"));
+	                        editjobreport.setUseraccountid(rs.getString("useraccountid"));
+	                        editjobreport.setReportstatus(rs.getString("report_status"));
+	                    });
+
+	                    // Fetch capability details
+	                    String query2 = "SELECT a.jobsmith_report_capabilityid,a.capabilityid, b.Cap_Capability, a.weightage, a.sequence " +
+	                                    "FROM jobsmith_report_capability_tbl a " +
+	                                    "INNER JOIN capability_tbl b ON b.Cap_CapabilityId = a.capabilityid " +
+	                                    "INNER JOIN jobsmith_report_tbl c ON c.jobsmith_reportid = a.jobsmith_reportid " +
+	                                    "WHERE a.archived != -9 AND a.jobsmith_reportid = ?";
+	                    jdbcTemplate.query(query2, new Object[]{jobreportid}, rs -> {
+	                        Jobedit jobedit = new Jobedit();
+	                        jobedit.setJobsmith_report_capabilityid(rs.getString("jobsmith_report_capabilityid"));
+	                        jobedit.setReport_CapabilityId(rs.getString("capabilityid"));
+	                        jobedit.setCap_Capability(rs.getString("Cap_Capability"));
+	                        jobedit.setReport_Weightage(rs.getString("weightage"));
+	                        jobedit.setRepCap_Sequence(rs.getString("sequence"));
+
+	                        String weightage = rs.getString("weightage");
+	                        if (weightage.equalsIgnoreCase("CRITICAL")) {
+	                            editjobreport.getCritical().add(jobedit);
+	                        } else if (weightage.equalsIgnoreCase("IMPORTANT")) {
+	                            editjobreport.getImportant().add(jobedit);
+	                        } else if (weightage.equalsIgnoreCase("NICE TO HAVE")) {
+	                            editjobreport.getNicetohave().add(jobedit);
+	                        }
+	                    });
+
+	                    editresp.setJobReportData(editjobreport);                    
+
+	                    sr.setValid(true);
+	                    sr.setStatusCode(1);
+	                    sr.setMessage(message); 
+
+	                    rsjr.setStatus(sr);
+	                    rsjr.setData(editresp);
+	                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);  
+    						} else {
+    							// User doesn't have permission to update this report
+    							sr.setValid(false);
+    							sr.setStatusCode(0);
+    							sr.setMessage("User doesn't have permission to get other user report");
+    							 rsjr.setData(null);
+    			                 rsjr.setStatus(sr);
+    							entity = new ResponseEntity<>(rsjr, headers, HttpStatus.FORBIDDEN);
+    						}
+    					
+	                } 	else {
+	                	// User has permission, proceed with fetching job report
+	                    String query1 = "SELECT jobsmith_reportid, jobsmith_report_name, jobsmith_report_note, " +
+	                                    "companyid, useraccountid, report_status " +
+	                                    "FROM jobsmith_report_tbl " +
+	                                    "WHERE archived != -9 AND jobsmith_reportid = ?";
+	                    jdbcTemplate.query(query1, new Object[]{jobreportid}, rs -> {
+	                        editjobreport.setJobreportid(rs.getString("jobsmith_reportid"));
+	                        editjobreport.setJobtitle(rs.getString("jobsmith_report_name"));
+	                        editjobreport.setJobnote(rs.getString("jobsmith_report_note"));
+	                        editjobreport.setCompanyid(rs.getString("companyid"));
+	                        editjobreport.setUseraccountid(rs.getString("useraccountid"));
+	                        editjobreport.setReportstatus(rs.getString("report_status"));
+	                    });
+
+	                    // Fetch capability details
+	                    String query2 = "SELECT a.jobsmith_report_capabilityid,a.capabilityid, b.Cap_Capability, a.weightage, a.sequence " +
+	                                    "FROM jobsmith_report_capability_tbl a " +
+	                                    "INNER JOIN capability_tbl b ON b.Cap_CapabilityId = a.capabilityid " +
+	                                    "INNER JOIN jobsmith_report_tbl c ON c.jobsmith_reportid = a.jobsmith_reportid " +
+	                                    "WHERE a.archived != -9 AND a.jobsmith_reportid = ?";
+	                    jdbcTemplate.query(query2, new Object[]{jobreportid}, rs -> {
+	                        Jobedit jobedit = new Jobedit();
+	                        jobedit.setJobsmith_report_capabilityid(rs.getString("jobsmith_report_capabilityid"));
+	                        jobedit.setReport_CapabilityId(rs.getString("capabilityid"));
+	                        jobedit.setCap_Capability(rs.getString("Cap_Capability"));
+	                        jobedit.setReport_Weightage(rs.getString("weightage"));
+	                        jobedit.setRepCap_Sequence(rs.getString("sequence"));
+
+	                        String weightage = rs.getString("weightage");
+	                        if (weightage.equalsIgnoreCase("CRITICAL")) {
+	                            editjobreport.getCritical().add(jobedit);
+	                        } else if (weightage.equalsIgnoreCase("IMPORTANT")) {
+	                            editjobreport.getImportant().add(jobedit);
+	                        } else if (weightage.equalsIgnoreCase("NICE TO HAVE")) {
+	                            editjobreport.getNicetohave().add(jobedit);
+	                        }
+	                    });
+
+	                    editresp.setJobReportData(editjobreport);                    
+
+	                    sr.setValid(true);
+	                    sr.setStatusCode(1);
+	                    sr.setMessage(message); 
+
+	                    rsjr.setStatus(sr);
+	                    rsjr.setData(editresp);
+	                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);
+	                }
+	                }
+    					else {
+	                    // User doesn't have permission
+	                    sr.setValid(false);
+	                    sr.setStatusCode(11);
+	                    sr.setMessage("User doesn't have permission to access this resource");
+	                    rsjr.setData(null);
+	                    rsjr.setStatus(sr);
+	                    entity = new ResponseEntity<>(rsjr, headers, HttpStatus.FORBIDDEN);
+	                }
+
+	            } catch(NullPointerException npex) {
+	                npex.printStackTrace();
+	                System.out.println(npex.getMessage());            
+	                sr.setValid(false);
+	                sr.setStatusCode(0);
+	                sr.setMessage("Unauthenticated Token Or NULL Or Unauthenticated User");
+	                rsjr.setData(null);
+	                rsjr.setStatus(sr);
+	                entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);                    
+
+	            } catch(Exception ex) {
+	                ex.printStackTrace();
+	                System.out.println(ex.getMessage());            
+	                sr.setValid(false);
+	                sr.setStatusCode(0);
+	                sr.setMessage("Unauthenticated Token Or Unauthenticated User");
+	                rsjr.setData(null);
+	                rsjr.setStatus(sr);
+	                entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
+	            }           
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            System.out.println(ex.getMessage());            
+	            sr.setValid(false);
+	            sr.setStatusCode(0);
+	            sr.setMessage("Unauthenticated Token Or Unauthenticated User");
+	            rsjr.setData(null);
+	            rsjr.setStatus(sr);
+	            entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
+	        } 
+	    } else {
+	        sr.setValid(false);
+	        sr.setStatusCode(0);
+	        sr.setMessage("Unauthenticated Token");
+	        rsjr.setData(null);
+	        rsjr.setStatus(sr);
+	        entity = new ResponseEntity<>(rsjr, headers, HttpStatus.UNAUTHORIZED);
+	    } 
+	    return entity;
+	}
+
+	
+	
+	
 
 	@PostMapping("/editjobsmithreports")
 	public  ResponseEntity<ResponseSaveJobsmithReports>  editJobsmithReports(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody JobsmithReportRequest data){
