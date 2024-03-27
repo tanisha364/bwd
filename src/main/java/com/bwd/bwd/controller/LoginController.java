@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bwd.bwd.model.UserAccounts;
-import com.bwd.bwd.model.UserEmails;
+import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.UserAccountsRepo;
 import com.bwd.bwd.repository.UserEmailsRepo;
 import com.bwd.bwd.request.LoginData;

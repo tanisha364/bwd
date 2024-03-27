@@ -14,4 +14,5 @@ public class AuthInfo {
 	private String regnum;
 	private int userLevel;	
 	private String userid;
+	private String refreshtoken;
 }

@@ -22,6 +22,7 @@ import com.bwd.bwd.response.TokenResponse;
 import com.bwd.bwd.response.UserDataResponse;
 import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
+import com.bwd.bwd.serviceimpl.JwtUserToken;
 
 @CrossOrigin("*")
 @RestController
@@ -116,15 +117,19 @@ public class UserController {
 		tr = entityToken.getBody();		
 		StatusResponse srToken = tr.getStatus();		
 		validToken = srToken.isValid();	
-		System.out.println(srToken.getMessage());
-		sr = srToken;
 
-		if (validToken) {
+		JwtUserToken jut = new JwtUserToken();
+		boolean validAccessToken = false;
+		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		
+		if(validToken)
+		{
+			if(validAccessToken)
+			{		
 			try {
 				System.out.println(data.getUseraccountid());
 				uaa = uaar.getReferenceByUserid(data.getUserid());
 
-	//			ui.setUseraccountid(uaa.getUseraccountid());
 				ui.setFirstname(uaa.getFirstname());
 				ui.setLastname(uaa.getLastname());
 				ui.setStatus(uaa.getStatus());
@@ -140,11 +145,11 @@ public class UserController {
 
 				entity = new ResponseEntity<>(uir, headers, HttpStatus.OK);
 			} catch (Exception ex) {				
-				System.out.println(ex.getMessage());
-
+				ex.printStackTrace();
+				System.out.println(ex.getMessage());			
 				sr.setValid(false);
-				sr.setStatusCode(9);
-				sr.setMessage("Exception Occurred : Useracoountid provided does not match in our record");
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or Unauthentic User");
 
 				udr.setUserinfo(ui_null);
 				uir.setStatus(sr);
@@ -152,12 +157,22 @@ public class UserController {
 
 				entity = new ResponseEntity<>(uir, headers, HttpStatus.NOT_FOUND);
 			}
-		} else {
-			System.out.println(data.getUseraccountid());
-			udr.setUserinfo(ui_null);
+		}
+			else
+			{
+				sr.setValid(false);
+				sr.setStatusCode(21);
+				sr.setMessage("Unauthentic Access Token");
+				uir.setData(null);
+				uir.setStatus(sr);		
+				entity = new ResponseEntity<>(uir, headers, HttpStatus.UNAUTHORIZED);
+			}
+		}else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");		
 			uir.setStatus(sr);
-			uir.setData(udr);
-			entity = new ResponseEntity<>(uir, headers, HttpStatus.NOT_FOUND);
+			entity = new ResponseEntity<>(uir, headers, HttpStatus.UNAUTHORIZED);
 		}
 		
 		return entity;

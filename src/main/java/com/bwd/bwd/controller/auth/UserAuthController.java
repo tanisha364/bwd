@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bwd.bwd.model.auth.OauthClients;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.model.auth.UserEmailsAuth;
+import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.repository.UserEmailAuthRepo;
@@ -29,10 +30,13 @@ import com.bwd.bwd.response.DataResponse;
 import com.bwd.bwd.response.StatusResponse;
 import com.bwd.bwd.response.TokenInfo;
 import com.bwd.bwd.response.TokenResponse;
+import com.bwd.bwd.response.UserTokenInfo;
+import com.bwd.bwd.response.UserTokenResponse;
 import com.bwd.bwd.service.AuthServices;
 import com.bwd.bwd.serviceimpl.AuthServiceImpl;
 import com.bwd.bwd.serviceimpl.Base64JsonServiceImpl;
 import com.bwd.bwd.serviceimpl.JWTServiceImpl;
+import com.bwd.bwd.serviceimpl.JwtUserToken;
 
 import io.jsonwebtoken.Claims;
 
@@ -168,13 +172,23 @@ public class UserAuthController {
 		
 		if(isUpdateToken)
 		{
-			AuthServiceImpl as = new AuthServiceImpl();
-			String useridToken = as.generateUserid(ai.getUseraccountid());
-			UserAccountsAuth user = uaar.getReferenceById(ai.getUseraccountid()); //= as.updateUser(ai.getUseraccountid(), useridToken);
-			 user.setUserid(useridToken);
-			 // Save the updated user back to the database
-	        uaar.save(user);
+			JwtUserToken jut = new JwtUserToken();
+			UserEmails userEmails = new UserEmails();
+			userEmails.setEmail(ai.getEmail());
+			userEmails.setUseraccountid(ai.getUseraccountid());
+
+			String jwtToken = jut.generateToken(userEmails);
+			String refreshToken = jut.refreshToken(jwtToken);
+
+			String useridToken = jwtToken;
+
+			UserAccountsAuth user = uaar.getReferenceById(ai.getUseraccountid());
+			user.setUserid(useridToken);
+			user.setRefreshtoken(refreshToken);
+			uaar.save(user);
+
 			ai.setUserid(user.getUserid());
+			ai.setRefreshtoken(user.getRefreshtoken());
 			dr.setUserinfo(ai);
 			ar.setData(dr);
 			System.out.println(useridToken);
@@ -501,17 +515,98 @@ public class UserAuthController {
 		return useraccountid;
 	}
 	
-	private long fetchUserAccountId(UserData data) {
-		long useraccountid = -1l;
-		UserAccountsAuth uaa = new UserAccountsAuth();
-		
-		try {	
-			uaa = uaar.getReferenceByUserid(data.getUserid());
-			useraccountid = uaa.getUseraccountid();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.out.println(ex.getMessage());
+	/*
+	 * private long fetchUserAccountId(UserData data) { long useraccountid = -1l;
+	 * UserAccountsAuth uaa = new UserAccountsAuth();
+	 * 
+	 * try { uaa = uaar.getReferenceByUserid(data.getUserid()); useraccountid =
+	 * uaa.getUseraccountid(); } catch (Exception ex) { ex.printStackTrace();
+	 * System.out.println(ex.getMessage()); } return useraccountid; }
+	 */
+	
+	@PostMapping("/refreshtoken")
+	public ResponseEntity<UserTokenResponse> generateRefreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserAccountsAuth userAccountsAuth) 
+	{
+		ResponseEntity<UserTokenResponse> entity = null;
+		HttpHeaders headers = new HttpHeaders();
+		JwtUserToken jut = new JwtUserToken();
+
+		UserTokenResponse utr = new UserTokenResponse();		
+		UserTokenInfo uti = new UserTokenInfo();
+		StatusResponse sr = new StatusResponse();
+
+		String refreshtoken = userAccountsAuth.getRefreshtoken();
+
+		System.out.println(refreshtoken);
+
+		UserEmails userEmails = new UserEmails();
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if(validToken)
+		{
+			try
+			{			
+				userEmails =  jut.getUserEmailClaims(refreshtoken);
+
+				String jwtToken = jut.generateToken(userEmails);
+				String refreshToken = jut.refreshToken(jwtToken);
+
+				UserAccountsAuth user = uaar.getReferenceById(userEmails.getUseraccountid());
+				user.setUserid(jwtToken);
+				user.setRefreshtoken(refreshToken);
+				uaar.save(user);			
+
+				uti.setUserToken(jwtToken);
+				uti.setRefreshToken(refreshToken);
+
+				sr.setMessage("JWT token refreshed  successfully");
+				sr.setValid(true);
+				sr.setStatusCode(1);			
+
+				entity = new ResponseEntity<>(utr, headers, HttpStatus.OK);
+
+			}catch(io.jsonwebtoken.ExpiredJwtException ejex) {
+				entity = new ResponseEntity<>(utr, headers, HttpStatus.UNAUTHORIZED);
+				System.out.println("JWT Refresh token expired : "+ejex.getMessage());
+				sr.setMessage("JWT Refresh token expired");
+				sr.setValid(false);
+				sr.setStatusCode(22);
+			}catch(Exception ejex) {
+				entity = new ResponseEntity<>(utr, headers, HttpStatus.UNAUTHORIZED);
+				System.out.println("Exception Occured OR Wrong Refresh Token : "+ejex.getMessage());
+				sr.setMessage("Exception Occured OR Wrong Refresh Token");
+				sr.setValid(false);
+				sr.setStatusCode(23);
+			}			
 		}
-		return useraccountid;
-	}
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token"); 
+		}
+
+		utr.setStatus(sr);
+		utr.setUserToken(uti);
+		return entity;		
+	}	
+
+	public boolean checkToken(String authorizationHeader)
+	{
+		boolean validToken = false;
+
+		TokenResponse tr = new TokenResponse();
+		ResponseEntity<TokenResponse> entityToken = null;
+
+		entityToken = validateBearerToken(authorizationHeader);
+
+		tr = entityToken.getBody();		
+		StatusResponse srToken = tr.getStatus();		
+		validToken = srToken.isValid();
+
+		return validToken;
+	}		
 }

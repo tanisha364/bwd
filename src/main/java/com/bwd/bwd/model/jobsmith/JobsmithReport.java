@@ -44,7 +44,7 @@ public class JobsmithReport
 		
 		this.jobsmith_report_name = dataJRR.getJobsmith_report_name();
 		this.jobsmith_report_note = dataJRR.getJobsmith_report_note();
-		this.companyid = -1;
+		this.companyid = dataJRR.getCompanyid();
 		this.useraccountid = dataJRR.getUseraccountid();
 		this.date_added = (java.sql.Timestamp) dt;
 		this.date_modifed = (java.sql.Timestamp)dt;

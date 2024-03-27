@@ -235,6 +235,26 @@ public class DBOperation {
 		this.statusCode = statusCode;
 	}
 	
+	
+	public String executeQuery(String query,String field)
+	{	
+		String value = "";
+		
+		try
+		{
+			stmt=con.createStatement();
+			rs=stmt.executeQuery(query);
+			if(rs.next())
+			{
+				value = rs.getString(field);
+			}
+		}catch(SQLException se){
+			se.printStackTrace(System.err);
+		}
+		
+		return value;
+	}	
+	
 	public static void main(String [] args)
 	{
 		DBOperation dbop = new DBOperation();

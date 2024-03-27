@@ -29,7 +29,7 @@ public class JWTServiceImpl{
 
 //	private static final long serialVersionUID = -2550185165626007488L;
 
-	public static final long JWT_TOKEN_VALIDITY = 100 * 5 * 60;
+	public static final long JWT_TOKEN_VALIDITY = 1000 * 50 * 60;
 
 //	@Value("${jwt.secret}")
 	private String secret="9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d2b5f8e3a9c8b5f6v8a3d9abcdefghijklmnOPQRSTUVWXYZ";	

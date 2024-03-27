@@ -56,11 +56,8 @@ public class UserAccountsAuth {
 	@Column(name = "password")	
 	private String password;	
 	
-	/*
-	`user_accounts`
-    `useraccountid`, `inviteeid`, `old_inviteeid`, `regnum`, `username`, `password`, `userid`, `userlevel`,
-    `email`, `timestamp`, `firstname`, `lastname`, `status`, `statusdate`, `violation`, `status_approved`, `
-     modified`, `lastvisit`, `linkid`, `option`, `customerid`, `landingassessmentid`, `isvet`	 
-*/	
+	@Column(name = "refreshtoken")
+	private String refreshtoken;	
+	
 
 }

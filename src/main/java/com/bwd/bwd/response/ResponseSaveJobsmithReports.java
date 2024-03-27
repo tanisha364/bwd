@@ -10,4 +10,5 @@ import lombok.Setter;
 @JavaBean
 public class ResponseSaveJobsmithReports {
 	private StatusResponse status;
+	private SavedJobReportResponse data;
 }

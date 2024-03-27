@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.bwd.bwd.model.jobsmith.JobSearchResult;
 import com.bwd.bwd.model.jobsmith.Reports;
+import com.bwd.bwd.response.JobTitleResponse;
 
 public class DBSearch {
 	
@@ -85,9 +86,97 @@ public class DBSearch {
 		return objects;
 	}
 	
+	public String getUserAccountId(String query, String field)
+	{
+		String uid = "000";	
+		
+		DBOperation dbop = new DBOperation();
+		
+		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ "+query+"\n"+field);
+		
+		uid = dbop.executeQuery(query, field);		
+		
+		return uid;
+	}
+	
+	public List<JobTitleResponse> getObjects(String findValue, int companyid)
+	{
+		DBOperation dbop = new DBOperation();
+		DBOperation dbopLike = new DBOperation();
+		
+		String searchQuery = """
+				Select 	jrt.jobsmith_reportid, jrt.jobsmith_report_name, jrt.useraccountid, CONCAT(ua.firstname, " ", ua.lastname) as username, jrt.date_modifed				   
+				from 
+				  jobsmith_report_tbl jrt
+				  INNER JOIN user_accounts ua 
+				  ON jrt.useraccountid = ua.useraccountid
+				WHERE 
+				  jobsmith_report_name = '"""+findValue+"' AND companyid = "+companyid+" AND archived = 0 "+"""
+				ORDER BY 
+				  jobsmith_report_name
+			""";
+		
+		System.out.println(searchQuery);
+		dbop.setSelectQuery(searchQuery);
+		dbop.executeSelectQuery();
+		String data[][] = dbop.fetchRecord();	
+		
+		List <JobTitleResponse> objects  = new ArrayList<JobTitleResponse>();
+
+		String searchQueryLike = """
+				Select 	jrt.jobsmith_reportid, jrt.jobsmith_report_name, jrt.useraccountid, CONCAT(ua.firstname, " ", ua.lastname) as username, jrt.date_modifed				   
+				from 
+				  jobsmith_report_tbl jrt
+				  INNER JOIN user_accounts ua 
+				  ON jrt.useraccountid = ua.useraccountid
+				WHERE 
+				  jobsmith_report_name like '%"""+findValue+"%' AND jobsmith_report_name != '"+findValue+"' AND companyid = "+companyid+" AND archived = 0 "+"""
+				ORDER BY 
+				  jobsmith_report_name
+			""";
+		System.out.println(searchQueryLike);
+		dbopLike.setSelectQuery(searchQueryLike);
+		dbopLike.executeSelectQuery();
+		String data1[][] = dbopLike.fetchRecord();	
+		
+		for(int i=0;i<=dbop.getNumberOfRow();i++)
+		{
+			JobTitleResponse obj = new JobTitleResponse();
+			
+			obj = obj.getObject(data[i]);
+			
+			System.out.println(obj);
+			
+			objects.add(obj);						
+		}
+		
+		System.out.println("NO : "+dbop.getNumberOfRow());
+		
+		if(dbop.getNumberOfRow()>=0)
+		{
+
+			for(int i=0;i<=dbopLike.getNumberOfRow();i++)
+			{
+				JobTitleResponse obj = new JobTitleResponse();
+
+				obj = obj.getObject(data1[i]);
+
+				System.out.println(obj);
+
+				objects.add(obj);						
+			}
+ 		}
+		else
+		{
+			objects = null;
+		}
+		return objects;
+	}		
+	
 	public static void main(String [] args)
 	{
 		DBSearch dbs = new DBSearch();
-		dbs.getObjects("HR");
+	//	dbs.getObjects("HR");
+		dbs.getObjects("Scrum Master",819);		
 	}
 }
