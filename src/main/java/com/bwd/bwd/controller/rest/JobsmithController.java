@@ -40,6 +40,7 @@ import com.bwd.bwd.repository.jobsmith.JobsmithReportRepo;
 import com.bwd.bwd.request.JobsmithReportRequest;
 import com.bwd.bwd.request.JobsmithReportRequestEdit;
 import com.bwd.bwd.request.UserData;
+import com.bwd.bwd.response.AccessPermissionResponse;
 import com.bwd.bwd.response.CapabilityInfoResponse;
 import com.bwd.bwd.response.CapabilityResponse;
 import com.bwd.bwd.response.CategoryInfoResponse;
@@ -50,6 +51,7 @@ import com.bwd.bwd.response.JobTitleResponse;
 import com.bwd.bwd.response.Jobedit;
 import com.bwd.bwd.response.JobsmithPremadeReport;
 import com.bwd.bwd.response.JobsmithPremadeReportResponse;
+import com.bwd.bwd.response.PermissionResponse;
 import com.bwd.bwd.response.PreMadeReport;
 import com.bwd.bwd.response.PreMadeReportResponse;
 import com.bwd.bwd.response.ReportInfo;
@@ -58,6 +60,7 @@ import com.bwd.bwd.response.ReportResponse;
 import com.bwd.bwd.response.ResponseEditJob;
 import com.bwd.bwd.response.ResponseJobTitle;
 import com.bwd.bwd.response.ResponseJobsmithPremadeReport;
+import com.bwd.bwd.response.ResponsePermission;
 import com.bwd.bwd.response.ResponsePreMadeReport;
 import com.bwd.bwd.response.ResponseSaveJobsmithReports;
 import com.bwd.bwd.response.ResponseSavedJobReport;
@@ -71,6 +74,7 @@ import com.bwd.bwd.response.TokenResponse;
 import com.bwd.bwd.response.UserDataResponse;
 import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
+import com.bwd.bwd.response.actionPermi;
 import com.bwd.bwd.serviceimpl.JwtUserToken;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -2689,4 +2693,142 @@ public class JobsmithController {
 		return entity;
 	}
 	
+	
+	@SuppressWarnings("deprecation")
+	@PostMapping("/getPermission")
+	public ResponseEntity<ResponsePermission> getPermission(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody UserData requestData)
+	{
+		ResponseEntity<ResponsePermission> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		ResponsePermission rjt = new ResponsePermission();
+		AccessPermissionResponse apr = new AccessPermissionResponse();
+		PermissionResponse pr = new PermissionResponse();
+		actionPermi actionPer = new actionPermi();
+		
+		StatusResponse sr = new StatusResponse();    	
+
+		UserAccountsAuth uaa = new UserAccountsAuth();
+
+		UserInfo ui = new UserInfo();    	
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		JwtUserToken jut = new JwtUserToken();
+		boolean validAccessToken = false;
+		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
+		
+		 int companyid = requestData.getCompanyid();
+
+		if(validToken)
+		{
+			if(validAccessToken)
+			{		
+				try {
+					try
+					{ 
+						uaa = uaar.getReferenceByUserid(requestData.getUserid());   
+						System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+requestData.getUserid());
+						ui.setFirstname(uaa.getFirstname());
+						ui.setLastname(uaa.getLastname());
+						ui.setStatus(uaa.getStatus());
+						ui.setStatusdate(uaa.getStatusdate());   
+						
+						String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
+						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, requestData.getUserid());	         	
+						Long profileAccountId = (Long) accountIdData.get(0).get("useraccountid");						
+						//int profileAccountIdInt = profileAccountId.intValue();
+						
+						
+						
+						String sqlQuery1 = "SELECT isAccess from jobsmith_user_profile_tbl WHERE companyid ="+companyid+" AND useraccountid = "+profileAccountId;
+
+						System.out.println(sqlQuery1);
+						
+						jdbcTemplate.query(sqlQuery1, new Object[] {}, rs -> {
+							pr.setIsAccess(rs.getInt("isAccess"));
+						});
+						
+						String sqlQuery2 = "SELECT jat.jobsmith_actionname FROM jobsmith_action_tbl jat"
+								+ " INNER JOIN jobsmith_permission_tbl jpt ON jat.jobsmith_actionId = jpt.jobsmith_actionId "
+								+ " INNER JOIN jobsmith_user_profile_tbl jut ON jpt.jobsmith_profileId = jut.jobsmith_profileId "
+								+ " WHERE jut.companyid ="+companyid+" AND jut.useraccountid = "+profileAccountId+"  AND jpt.IsPermission=1 ";
+						
+						System.out.println(sqlQuery2);
+						
+						jdbcTemplate.query(sqlQuery2, new Object[] {}, rs -> {
+									
+							actionPer.setName(rs.getString("jobsmith_actionname"));
+							
+							pr.getAction().add(actionPer);
+						});
+
+						apr.setPermissionResponse(pr);
+						
+
+						sr.setValid(true);
+						sr.setStatusCode(1);
+						sr.setMessage("Job List");      		    	
+
+						rjt.setData(apr);
+						rjt.setStatus(sr);
+
+						entity = new ResponseEntity<>(rjt, headers, HttpStatus.OK);	    				
+					}catch(NullPointerException npex)
+					{
+						npex.printStackTrace();
+						System.out.println(npex.getMessage());			
+						sr.setValid(false);
+						sr.setStatusCode(0);
+						sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");
+						rjt.setData(null);
+						rjt.setStatus(sr);
+						entity = new ResponseEntity<>(rjt, headers, HttpStatus.UNAUTHORIZED);    				
+
+					}catch(Exception ex)
+					{
+						ex.printStackTrace();
+						System.out.println(ex.getMessage());			
+						sr.setValid(false);
+						sr.setStatusCode(0);
+						sr.setMessage("Unauthentic Token Or Unauthentic User");
+						rjt.setData(null);
+						rjt.setStatus(sr);
+						entity = new ResponseEntity<>(rjt, headers, HttpStatus.UNAUTHORIZED);
+					}  		
+				}catch (Exception ex) {
+					ex.printStackTrace();
+					System.out.println(ex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or Unauthentic User");
+					rjt.setData(null);
+					rjt.setStatus(sr);
+					entity = new ResponseEntity<>(rjt, headers, HttpStatus.UNAUTHORIZED);
+				}
+			}    	
+			else
+			{
+				sr.setValid(false);
+				sr.setStatusCode(21);
+				sr.setMessage("Unauthentic Access Token");
+				rjt.setData(null);
+				rjt.setStatus(sr);		
+				entity = new ResponseEntity<>(rjt, headers, HttpStatus.UNAUTHORIZED);
+			}
+		}
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");			
+			rjt.setStatus(sr);
+			entity = new ResponseEntity<>(rjt, headers, HttpStatus.UNAUTHORIZED);
+		}		
+
+		return entity;
+		
+	}
 }

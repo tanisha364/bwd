@@ -27,7 +27,7 @@ public class JwtUserToken {
 
 //	private static final long serialVersionUID = -2550185165626007488L;
 
-	public static final long JWT_TOKEN_VALIDITY =  30 * 60;
+	public static final long JWT_TOKEN_VALIDITY =  30 * 60 * 60;
 	public static final long JWT_REFRESH_TOKEN_VALIDITY = 30  * 60 * 60;
 
 //	@Value("${jwt.secret}")
