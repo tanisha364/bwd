@@ -2704,7 +2704,7 @@ public class JobsmithController {
 		ResponsePermission rjt = new ResponsePermission();
 		AccessPermissionResponse apr = new AccessPermissionResponse();
 		PermissionResponse pr = new PermissionResponse();
-		actionPermi actionPer = new actionPermi();
+		//actionPermi actionPer = new actionPermi();
 		
 		StatusResponse sr = new StatusResponse();    	
 
@@ -2751,7 +2751,7 @@ public class JobsmithController {
 							pr.setIsAccess(rs.getInt("isAccess"));
 						});
 						
-						String sqlQuery2 = "SELECT jat.jobsmith_actionname FROM jobsmith_action_tbl jat"
+						String sqlQuery2 = "SELECT jat.jobsmith_actionId FROM jobsmith_action_tbl jat"
 								+ " INNER JOIN jobsmith_permission_tbl jpt ON jat.jobsmith_actionId = jpt.jobsmith_actionId "
 								+ " INNER JOIN jobsmith_user_profile_tbl jut ON jpt.jobsmith_profileId = jut.jobsmith_profileId "
 								+ " WHERE jut.companyid ="+companyid+" AND jut.useraccountid = "+profileAccountId+"  AND jpt.IsPermission=1 ";
@@ -2759,9 +2759,9 @@ public class JobsmithController {
 						System.out.println(sqlQuery2);
 						
 						jdbcTemplate.query(sqlQuery2, new Object[] {}, rs -> {
-									
-							actionPer.setName(rs.getString("jobsmith_actionname"));
 							
+							actionPermi actionPer = new actionPermi();									
+							actionPer.setId(rs.getString("jobsmith_actionId"));							
 							pr.getAction().add(actionPer);
 						});
 

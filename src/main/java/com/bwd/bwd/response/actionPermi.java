@@ -11,14 +11,14 @@ import lombok.Setter;
 
 public class actionPermi {
 
-	public String name;
+	public String id;
 	
 	public actionPermi() {
 
 	}
 
 	public actionPermi getObject(String arr[]) {
-		this.name = arr[0];
+		this.id = arr[0];
 
 		return this;
 	}

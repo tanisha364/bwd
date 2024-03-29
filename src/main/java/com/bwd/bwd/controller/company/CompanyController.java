@@ -1,11 +1,13 @@
 package com.bwd.bwd.controller.company;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bwd.bwd.controller.auth.UserAuthController;
+import com.bwd.bwd.db.DBUpdate;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.request.UserData;
@@ -42,6 +45,9 @@ public class CompanyController {
 	
 	@Autowired
 	UserAccountsAuthRepo uaar;
+	
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 	
 	public boolean checkToken(String authorizationHeader)
 	{
@@ -262,4 +268,100 @@ public class CompanyController {
 		}
 		return entity;
 	}
+	
+	
+	@PostMapping("/accesslevelcheck")
+	public ResponseEntity<StatusResponse> getAccessLevel(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData data)
+	{	
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();
+
+		UserAccountsAuth uaa = new UserAccountsAuth();
+
+		UserInfo ui = new UserInfo();    	
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		JwtUserToken jut = new JwtUserToken();
+		boolean validAccessToken = false;
+		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		
+		if(validToken)
+		{
+			if(validAccessToken)
+			{
+			try {
+				try
+				{ 
+					uaa = uaar.getReferenceByUserid(data.getUserid());   
+
+					ui.setFirstname(uaa.getFirstname());
+					ui.setLastname(uaa.getLastname());
+					ui.setStatus(uaa.getStatus());
+					ui.setStatusdate(uaa.getStatusdate());    
+										
+					sr = cs.getaccess(data);
+					
+					if(sr.isValid() == true)
+					{
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+					}
+					else
+					{
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+					}
+					
+					
+				}
+				catch(NullPointerException npex)
+				{
+					npex.printStackTrace();
+					System.out.println(npex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+				}catch(Exception ex)
+				{
+					ex.printStackTrace();
+					System.out.println(ex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or Unauthentic User");
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+				}  		
+			}catch (Exception ex) {
+				ex.printStackTrace();
+				System.out.println(ex.getMessage());			
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or Unauthentic User");
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+			}
+			}	
+			else
+			{
+				sr.setValid(false);
+				sr.setStatusCode(21);
+				sr.setMessage("Unauthentic Access Token");	
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+			}
+		}
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);	
+			return entity;
+		} 
+		return entity;
+
+	}
+	
 }

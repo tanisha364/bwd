@@ -9,7 +9,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.bwd.bwd.db.DBOperation;
+import com.bwd.bwd.db.DBSearch;
 import com.bwd.bwd.request.UserData;
+import com.bwd.bwd.response.StatusResponse;
 import com.bwd.bwd.response.company.CompanyDetailsResponse;
 import com.bwd.bwd.response.company.CompanyListResponse;
 
@@ -137,4 +139,30 @@ public class CompanyServiceImpl implements CompanyServices{
 
 		return listJPR;		
 	}	
+	
+	
+	 public StatusResponse getaccess(UserData data) {
+		    StatusResponse sr = new StatusResponse();
+		    
+	        int companyid = data.getCompanyid();
+	        
+	        String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
+			List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
+			Long profileAccountId = (Long) accountIdData.get(0).get("useraccountid");	
+			
+			String sqlUpdate = "SELECT accesslevel FROM user_association uas INNER JOIN user_accounts uac ON uas.useraccountid = uac.useraccountid WHERE uas.companyid ="+companyid+" AND uas.useraccountid = "+profileAccountId;
+			int accessLevel = jdbcTemplate.queryForObject(sqlUpdate, Integer.class);
+
+			 if(accessLevel>10)
+			 {			
+	        		sr.setValid(true);
+	        		sr.setStatusCode(1);
+	        		sr.setMessage("Permission Granted");	        	
+			 }else {				 			   	
+	        		sr.setValid(false);
+	        		sr.setStatusCode(0);
+	        		sr.setMessage(" No SPermission Granted");
+			 }	        
+	        return sr;
+	    }
 }
