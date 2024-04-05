@@ -138,6 +138,7 @@ DBConnection dbc = null;
 						  ,`useraccountid` = """+data.getUseraccountid()+""" 
 						  ,`date_modifed` = current_timestamp 
 						  ,`status_date` = current_timestamp
+						  ,`report_status` = "DRAFT"
 						WHERE 
 						  `jobsmith_reportid` = """+data.getJobsmith_reportid(); 
 		 

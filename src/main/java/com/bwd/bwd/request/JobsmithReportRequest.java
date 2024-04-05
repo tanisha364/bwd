@@ -20,6 +20,7 @@ public class JobsmithReportRequest {
 	public int companyid;
 	private int useraccountid;
 	private String userid;
+	private String reportstatus;
 	
 	public ArrayList<Critical> critical;
 	public ArrayList<Important> important;

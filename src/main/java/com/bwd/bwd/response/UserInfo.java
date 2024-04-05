@@ -1,7 +1,9 @@
 package com.bwd.bwd.response;
 
 import java.beans.JavaBean;
+import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,6 +15,6 @@ public class UserInfo {
 	//private Long useraccountid;
 	private String firstname;
 	private String lastname;		
-	private int status;
-	private Date statusdate;
+	private BigDecimal status;
+	private Timestamp statusdate;
 }

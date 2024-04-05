@@ -18,4 +18,5 @@ public class UserData {
 	private String jobsmithReportName;
 	private int companyid;
 	private int userlevel;
+	private int keylenght;
 }

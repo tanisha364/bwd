@@ -27,7 +27,7 @@ public class JwtUserToken {
 
 //	private static final long serialVersionUID = -2550185165626007488L;
 
-	public static final long JWT_TOKEN_VALIDITY =  30 * 60 * 60;
+	public static final long JWT_TOKEN_VALIDITY =  30 * 60 * 60 ;
 	public static final long JWT_REFRESH_TOKEN_VALIDITY = 30  * 60 * 60 * 5;
 
 //	@Value("${jwt.secret}")
@@ -38,12 +38,6 @@ public class JwtUserToken {
 		Long found = ocr.isRecordExist(useraccountid, email);
 		return found;
 	}
-	
-//	public String generateToken(String refreshToken) {
-//		Map<String, Object> claims = new HashMap<>();
-//		
-//		return doGenerateToken(claims,userDetails.getEmail(),(userDetails.getUseraccountid())+"");
-//	}	
 
 	public String generateToken(UserEmails userDetails) {
 		Map<String, Object> claims = new HashMap<>();

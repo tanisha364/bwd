@@ -1,6 +1,9 @@
 package com.bwd.bwd.model.auth;
 
+import java.math.BigDecimal;
 import java.sql.Date;
+
+import com.bwd.bwd.util.DateTimeCreation;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,19 +27,12 @@ public class UserAccountsAuth {
 	
 	@Column(name = "regnum")	
 	private String regnum;
-	
-	@Column(name = "username")	
-	private String username;
-	
-	@Column(name = "email")	
-	private String email;
-	
-	
+			
 	@Column(name = "userid")
 	private String userid;	 
 	
 	@Column(name = "userlevel")	
-	private int userlevel;
+	private Byte userlevel=1;
 	
 	@Column(name = "firstname")	
 	private String firstname;
@@ -44,14 +40,13 @@ public class UserAccountsAuth {
 	@Column(name = "lastname")	
 	private String lastname;
 	
-	//@Column(name = "hashpassword")	
-	//private String hashpassword;	
+	@Column(name = "linkid")	
+	private String linkid="-1";
 	
 	@Column(name = "status")
-	private int status;
+	private BigDecimal status = BigDecimal.valueOf(1);
 	
-	@Column(name = "statusdate")
-	private Date statusdate;
+	public java.sql.Timestamp statusdate;
 	
 	@Column(name = "password")	
 	private String password;	
@@ -59,5 +54,26 @@ public class UserAccountsAuth {
 	@Column(name = "refreshtoken")
 	private String refreshtoken;	
 	
-
+	@Column(name = "isvet")
+	private int isvet;
+	
+	public UserAccountsAuth()
+	{
+		
+	}
+	
+	public UserAccountsAuth createAccount(AccountRequest dataJRR, String regnum, String linkid )
+	{							
+		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
+        this.firstname = dataJRR.getFirstname();
+        this.lastname = dataJRR.getLastname();
+        this.password = dataJRR.getPassword();
+        this.isvet = dataJRR.getIsvet();
+        this.statusdate = (java.sql.Timestamp)dt;
+        
+        System.out.println(":::::::::::::::::::::::: "+statusdate);
+        this.regnum = regnum;
+        this.linkid = linkid;
+		return this;
+	}	
 }

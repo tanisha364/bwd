@@ -106,7 +106,7 @@ public class AuthServiceImpl implements AuthServices {
 			
 			ai.setUseraccountid(useraccountid);
 			ai.setUserLevel(userlevel);
-			ai.setEmail(uaa.getEmail());
+			//ai.setEmail(uaa.getEmail());
 			
 			sr.setStatusCode(3);  
 			sr.setMessage("User Account Found for Given Useraccount Id"); 
@@ -136,9 +136,9 @@ public class AuthServiceImpl implements AuthServices {
 		UserAccountsAuth uaa;
 		DataResponse dr = new DataResponse();
 
-		uaa = (UserAccountsAuth) uaar.findByEmail(ld.getEmail());
-		ai.setEmail(uaa.getEmail());
-		ai.setUserLevel(uaa.getUserlevel());
+		//uaa = (UserAccountsAuth) uaar.findByEmail(ld.getEmail());
+		//ai.setEmail(uaa.getEmail());
+		//ai.setUserLevel(uaa.getUserlevel());
 		
 	    dr.setUserinfo(ai);
 	    ar.setData(dr);
@@ -203,7 +203,7 @@ public class AuthServiceImpl implements AuthServices {
 			ai.setRegnum(uaa.getRegnum()); 
 			ai.setUseraccountid(uaa.getUseraccountid());
 			ai.setUserLevel(uaa.getUserlevel());
-			ai.setEmail(uaa.getEmail());
+			//ai.setEmail(uaa.getEmail());
 			sr.setValid(true);
 			sr.setStatusCode(2);      // 2 -  if password matched
 		}

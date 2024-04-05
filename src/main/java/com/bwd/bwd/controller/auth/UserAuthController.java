@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,13 +14,20 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bwd.bwd.model.auth.AccountRequest;
 import com.bwd.bwd.model.auth.OauthClients;
+import com.bwd.bwd.model.auth.UesrTokenAuth;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
+import com.bwd.bwd.model.auth.UserAssociationAuth;
 import com.bwd.bwd.model.auth.UserEmailsAuth;
+import com.bwd.bwd.model.auth.UserTelsAuth;
 import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
+import com.bwd.bwd.repository.UserAssociationAuthRepo;
 import com.bwd.bwd.repository.UserEmailAuthRepo;
+import com.bwd.bwd.repository.UserTelAuthRepo;
+import com.bwd.bwd.repository.UserTokenAuthRepo;
 import com.bwd.bwd.request.LoginData;
 import com.bwd.bwd.request.TokenInfoReq;
 import com.bwd.bwd.request.UserData;
@@ -37,6 +45,7 @@ import com.bwd.bwd.serviceimpl.AuthServiceImpl;
 import com.bwd.bwd.serviceimpl.Base64JsonServiceImpl;
 import com.bwd.bwd.serviceimpl.JWTServiceImpl;
 import com.bwd.bwd.serviceimpl.JwtUserToken;
+import com.bwd.bwd.serviceimpl.UserInfoImpl;
 
 import io.jsonwebtoken.Claims;
 
@@ -56,6 +65,18 @@ public class UserAuthController {
 	
 	@Autowired
 	UserEmailAuthRepo uer;	
+	
+	@Autowired
+	UserTelAuthRepo utr;	
+	
+	@Autowired
+	UserTokenAuthRepo utor;		
+	
+	@Autowired
+	UserAssociationAuthRepo uacar;
+	
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 	
 	@GetMapping("/token")
 	public ResponseEntity<TokenResponse> generateBasicToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
@@ -609,4 +630,59 @@ public class UserAuthController {
 
 		return validToken;
 	}		
+	
+	
+	
+	@PostMapping("/register/user")
+    public ResponseEntity<String> registerUser(@RequestBody AccountRequest userAccount) {
+		
+		String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
+		int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
+		
+		String sql = "select mark from company where companyid="+companyid;
+		String mark = jdbcTemplate.queryForObject(sql, String.class);
+		
+		
+		
+		String sql2 ="SELECT comptokenid FROM companytoken_tbl WHERE companyid="+companyid;
+		int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);		
+		
+		String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
+		int jobid = jdbcTemplate.queryForObject(sql3, Integer.class);
+		
+		UserAccountsAuth uaa = new UserAccountsAuth();
+	    uaar.save(uaa); 
+	    Long useraccountid = uaa.getUseraccountid();
+	    String regnum = mark + useraccountid;
+	   
+        String linkid1 = UserInfoImpl.generateUniqueLinkId();
+	    
+	    AuthServiceImpl asi = new AuthServiceImpl();
+	    
+	    String password1 = asi.getHash(userAccount.getPassword());
+	    userAccount.setPassword(password1);
+	    
+	    //UserAccountsAuth userAccountsAuth = uaa.createAccount(userAccount, regnum, linkid1);
+	    uaar.save(uaa.createAccount(userAccount, regnum, linkid1));
+		
+		Long id = uaa.getUseraccountid();
+		int convertedId = id.intValue();
+		
+		UserEmailsAuth uea = new UserEmailsAuth();
+		uer.save(uea.createEmail(id, userAccount.getEmail() ));
+		
+		UserTelsAuth uta = new UserTelsAuth();
+		utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
+
+		
+		UesrTokenAuth utoa = new UesrTokenAuth();
+		utor.save(utoa.createToken(convertedId, companyid, comptokenid));
+	
+		
+		UserAssociationAuth uaca = new UserAssociationAuth();
+		uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid));
+        return ResponseEntity.ok("User registered successfully");
+    }
+
+	
 }

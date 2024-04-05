@@ -528,7 +528,7 @@ public class JobsmithController {
 					ui.setStatus(uaa.getStatus());
 					ui.setStatusdate(uaa.getStatusdate());   
 					
-					String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
+					String accountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 					List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
 					Long useraccountId = (Long) accountIdData.get(0).get("useraccountid");
 					int useraccountIdInt = useraccountId.intValue();
@@ -557,48 +557,60 @@ public class JobsmithController {
 					}
 
 					if (hasPermission) {
-						jrr.save(jr.createJobsmithReport(data));
-						jrr.flush();
-						int id = jr.getJobsmith_reportid();
-
-						ArrayList<Critical> ar = data.getCritical();		
-						Iterator itr = ar.iterator();
-						System.out.println("Size of Critical : "+ar.size());
-						while (itr.hasNext())
-						{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
-						Critical ob = (Critical) itr.next();        	
-						jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
-						jrcr.flush();
+						DBSearch dbs = new DBSearch();
+						if(dbs.findObjects(data.getJobsmith_report_name(), data.getCompanyid()))
+						{
+							sr.setValid(false);
+							sr.setStatusCode(0);
+							sr.setMessage("Job Title with company id exists");      
+							rsjr.setStatus(sr);
+							entity = new ResponseEntity<>(rsjr, headers, HttpStatus.BAD_REQUEST);							
 						}
+						else
+						{
+							jrr.save(jr.createJobsmithReport(data));
+							jrr.flush();
+							int id = jr.getJobsmith_reportid();
 
-						ArrayList<Important> ari = data.getImportant();		
-						Iterator itri = ari.iterator();
-						System.out.println("Size of Critical : "+ari.size());
-						while (itri.hasNext())
-						{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
-						Important ob = (Important) itri.next();        	
-						jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
-						jrcr.flush();
-						}  
+							ArrayList<Critical> ar = data.getCritical();		
+							Iterator itr = ar.iterator();
+							System.out.println("Size of Critical : "+ar.size());
+							while (itr.hasNext())
+							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
+							Critical ob = (Critical) itr.next();        	
+							jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
+							jrcr.flush();
+							}
 
-						ArrayList<Nicetohave> arn = data.getNicetohave();		
-						Iterator itrn = arn.iterator();
-						System.out.println("Size of Critical : "+ar.size());
-						while (itrn.hasNext())
-						{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
-						Nicetohave ob = (Nicetohave) itrn.next();        	
-						jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
-						jrcr.flush();
-						}  
+							ArrayList<Important> ari = data.getImportant();		
+							Iterator itri = ari.iterator();
+							System.out.println("Size of Critical : "+ari.size());
+							while (itri.hasNext())
+							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
+							Important ob = (Important) itri.next();        	
+							jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
+							jrcr.flush();
+							}  
 
-						message = "Job report saved successfully = "+id;    
+							ArrayList<Nicetohave> arn = data.getNicetohave();		
+							Iterator itrn = arn.iterator();
+							System.out.println("Size of Critical : "+ar.size());
+							while (itrn.hasNext())
+							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
+							Nicetohave ob = (Nicetohave) itrn.next();        	
+							jrcr.save(jrc.createJobsmithReportCapability(id,Integer.parseInt(ob.getCapabilityid()),ob.getWeightage(),Integer.parseInt(ob.getSequence())));
+							jrcr.flush();
+							}  
 
-						sr.setValid(true);
-						sr.setStatusCode(1);
-						sr.setMessage(message);   
+							message = "Job report saved successfully = "+id;    
 
-						rsjr.setStatus(sr);
-						entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);	
+							sr.setValid(true);
+							sr.setStatusCode(1);
+							sr.setMessage(message);   
+
+							rsjr.setStatus(sr);
+							entity = new ResponseEntity<>(rsjr, headers, HttpStatus.OK);								
+						}
 					}
 					else {
 						// User doesn't have permission
@@ -1149,7 +1161,8 @@ public class JobsmithController {
 		String [][]data;		
 		String sqlQuery = """	
 				SELECT 
-				a.jobsmith_reportid, 
+				a.jobsmith_reportid,
+				c.jobsmith_report_note, 
 				a.capabilityid, 
 				b.Cap_Capability, 
 				a.weightage, 
@@ -2431,7 +2444,7 @@ public class JobsmithController {
 						}
 					}
 
-					if (hasPermission) {					
+					if (hasPermission) {							
 
 						String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
 						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	

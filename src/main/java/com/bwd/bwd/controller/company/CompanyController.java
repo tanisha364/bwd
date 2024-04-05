@@ -1,22 +1,17 @@
 package com.bwd.bwd.controller.company;
 
 import java.util.List;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.bwd.bwd.controller.auth.UserAuthController;
-import com.bwd.bwd.db.DBUpdate;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.request.UserData;
@@ -45,9 +40,6 @@ public class CompanyController {
 	
 	@Autowired
 	UserAccountsAuthRepo uaar;
-	
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
 	
 	public boolean checkToken(String authorizationHeader)
 	{

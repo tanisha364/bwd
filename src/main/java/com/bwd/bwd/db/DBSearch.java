@@ -171,12 +171,115 @@ public class DBSearch {
 			objects = null;
 		}
 		return objects;
-	}		
+	}	
+	
+	public boolean  findObjects(String findValue, int companyid)
+	{
+		boolean valueFound =  false;
+		DBOperation dbop = new DBOperation();
+		DBOperation dbopLike = new DBOperation();
+		
+		String searchQuery = """
+				Select 	jrt.jobsmith_reportid, jrt.jobsmith_report_name, jrt.useraccountid, CONCAT(ua.firstname, " ", ua.lastname) as username, jrt.date_modifed				   
+				from 
+				  jobsmith_report_tbl jrt
+				  INNER JOIN user_accounts ua 
+				  ON jrt.useraccountid = ua.useraccountid
+				WHERE 
+				  jobsmith_report_name = '"""+findValue+"' AND companyid = "+companyid+" AND archived = 0 "+"""
+				ORDER BY 
+				  jobsmith_report_name
+			""";
+		
+		System.out.println(searchQuery);
+		dbop.setSelectQuery(searchQuery);
+		dbop.executeSelectQuery();
+		String data[][] = dbop.fetchRecord();
+		
+		System.out.println("No of rows : "+dbop.getNumberOfRow());
+		
+		if(dbop.getNumberOfRow()>=0)
+		{	
+			valueFound = true;
+		}
+		
+		return valueFound;	
+		
+	}	
+	
+	public boolean  findObjects(String findValue)
+	{
+		boolean valueFound =  false;
+		DBOperation dbop = new DBOperation();
+		DBOperation dbopLike = new DBOperation();
+		
+		String searchQuery = "SELECT * FROM `user_accounts` WHERE `linkid` = '"+findValue+"'";
+		
+		System.out.println(searchQuery);
+		dbop.setSelectQuery(searchQuery);
+		dbop.executeSelectQuery();
+		String data[][] = dbop.fetchRecord();
+		
+		System.out.println("No of rows : "+dbop.getNumberOfRow());
+		
+		if(dbop.getNumberOfRow()>=0)
+		{	
+			valueFound = true;
+		}
+		
+		return valueFound;	
+		
+	}	
+	
+	public boolean  findObjects(int keylenght,String findValue)
+	{
+		boolean valueFound =  false;
+		DBOperation dbop = new DBOperation();
+		DBOperation dbopLike = new DBOperation();
+		
+		String table;
+		String key;
+		
+		switch(keylenght)
+		{
+			case 20: 	table = "user_accounts";
+					 	key = "linkid";
+					 	break;
+			case 15: 	table = "company";
+			 			key = "integrate";
+			 			break;
+			case 10: 	table = "landingpage";
+			 			key = "code";
+			 			break;
+			default : 	table = "user_accounts";
+			 			key = "linkid";
+			 			break;			 
+		}
+		
+		String searchQuery = "SELECT * FROM `"+table+"` WHERE `"+key+"` = '"+findValue+"'";
+		
+		System.out.println("keylenght = "+keylenght+" : "+searchQuery);
+		dbop.setSelectQuery(searchQuery);
+		dbop.executeSelectQuery();
+		String data[][] = dbop.fetchRecord();
+		
+		System.out.println("No of rows : "+dbop.getNumberOfRow());
+		
+		if(dbop.getNumberOfRow()>=0)
+		{	
+			valueFound = true;
+		}
+		
+		return valueFound;	
+		
+	}	
 	
 	public static void main(String [] args)
 	{
 		DBSearch dbs = new DBSearch();
 	//	dbs.getObjects("HR");
-		dbs.getObjects("Scrum Master",819);		
+		dbs.getObjects("Scrum Master",819);	
+		
+		System.out.println(dbs.findObjects("Scrum Master",813));
 	}
 }

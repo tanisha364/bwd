@@ -10,7 +10,7 @@ import com.bwd.bwd.model.auth.UserAccountsAuth;
 @Repository
 public interface UserAccountsAuthRepo  extends JpaRepository<UserAccountsAuth, Long>
 {
-	List<UserAccountsAuth> findByEmail(String email);	
+	//List<UserAccountsAuth> findByEmail(String email);	
 	
 	UserAccountsAuth getReferenceById(Long useraccountid);
 	

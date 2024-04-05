@@ -11,6 +11,7 @@ import lombok.Setter;
 @Setter
 public class SavedJobReportsExpansion {
 	private String jobsmithRreportId; 
+	private String jobsmith_report_note;
 	private String capabilityid;
 	private String cap_Capability; 
 	private String weightage;
@@ -23,10 +24,11 @@ public class SavedJobReportsExpansion {
 		
 	}
 	
-	public SavedJobReportsExpansion(String jobsmithRreportId, String capabilityid, String cap_Capability,
+	public SavedJobReportsExpansion(String jobsmithRreportId, String jobsmith_report_note,  String capabilityid, String cap_Capability,
 			String weightage, String report_status, String status_date, String sequence) {
 		super();
 		this.jobsmithRreportId = jobsmithRreportId;
+		this.jobsmith_report_note = jobsmith_report_note;
 		this.capabilityid = capabilityid;
 		this.cap_Capability = cap_Capability;
 		this.weightage = weightage;
@@ -38,12 +40,13 @@ public class SavedJobReportsExpansion {
 	public SavedJobReportsExpansion getObject(String arr[])
 	{
 		this.jobsmithRreportId = arr[0];
-		this.capabilityid = arr[1];
-		this.cap_Capability = arr[2];
-		this.weightage = arr[3];
-		this.report_status = arr[4];
-		this.status_date = arr[5];
-		this.sequence = arr[6];
+		this.jobsmith_report_note = arr[1];
+		this.capabilityid = arr[2];
+		this.cap_Capability = arr[3];
+		this.weightage = arr[4];
+		this.report_status = arr[5];
+		this.status_date = arr[6];
+		this.sequence = arr[7];
 		
 		return this;
 	}	

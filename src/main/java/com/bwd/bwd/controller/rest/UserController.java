@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bwd.bwd.controller.auth.UserAuthController;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
+import com.bwd.bwd.request.KeyInput;
 import com.bwd.bwd.request.UserData;
 import com.bwd.bwd.response.StatusResponse;
 import com.bwd.bwd.response.TokenResponse;
@@ -23,6 +24,7 @@ import com.bwd.bwd.response.UserDataResponse;
 import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserInfoResponse;
 import com.bwd.bwd.serviceimpl.JwtUserToken;
+import com.bwd.bwd.serviceimpl.UserInfoImpl;
 
 @CrossOrigin("*")
 @RestController
@@ -192,4 +194,22 @@ public class UserController {
 		}
 		return useraccountid;
 	}
+//	
+//	@GetMapping("/generatelinkid")
+//	public String generateUniqueLinkId() {
+//		String linkid = "-1"; 
+//		
+//		linkid = UserInfoImpl.generateUniqueLinkId();
+//		
+//		return linkid;
+//	}
+	
+	@PostMapping("/generatelinkid")
+	public String generateUniqueLinkId(@RequestBody KeyInput data) {
+		String linkid = "-1"; 
+		System.out.println("keylenght = "+data.getKeylenght());
+		linkid = UserInfoImpl.generateUniqueLinkId(data.getKeylenght());
+		
+		return linkid;
+	}	
 }
