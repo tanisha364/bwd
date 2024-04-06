@@ -32,10 +32,16 @@ public class UserAssociationAuth {
 	private int useraccountid;
 
 	@Column(name = "accesslevel")
-	private int accesslevel=10;
+	private int accesslevel=0;
 
 	@Column(name = "jobid")
 	private int jobid;
+	
+	@Column(name = "companyemail")
+	private String companyemail;
+	
+	@Column(name = "participanttype")
+	private int participanttype;
 	
 	@Column(name = "date")
 	public java.sql.Timestamp date;
@@ -54,13 +60,15 @@ public class UserAssociationAuth {
 		this.jobid = jobid;		
 	}
 
-	public UserAssociationAuth createAssociation(int id, int tokenid, int companyid , int jobid)
+	public UserAssociationAuth createAssociation(int id, int tokenid, int companyid , int jobid, String companyemail, int participanttype)
 	{
 		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
 		this.useraccountid = id;
 		this.companyid = companyid;
 		this.tokenid = tokenid;
 		this.jobid = jobid;
+		this.companyemail = companyemail;
+		this.participanttype = participanttype;
 		this.date = (java.sql.Timestamp)dt;
 		return this;
 	}

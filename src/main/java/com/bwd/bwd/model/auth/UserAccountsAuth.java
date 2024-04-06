@@ -32,7 +32,7 @@ public class UserAccountsAuth {
 	private String userid;	 
 	
 	@Column(name = "userlevel")	
-	private Byte userlevel=1;
+	private Byte userlevel=-10;
 	
 	@Column(name = "firstname")	
 	private String firstname;
@@ -57,12 +57,15 @@ public class UserAccountsAuth {
 	@Column(name = "isvet")
 	private int isvet;
 	
+	@Column(name = "`option`")
+	private int option;
+	
 	public UserAccountsAuth()
 	{
 		
 	}
 	
-	public UserAccountsAuth createAccount(AccountRequest dataJRR, String regnum, String linkid )
+	public UserAccountsAuth createAccount(AccountRequest dataJRR, String regnum, String linkid, int option )
 	{							
 		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
         this.firstname = dataJRR.getFirstname();
@@ -74,6 +77,7 @@ public class UserAccountsAuth {
         System.out.println(":::::::::::::::::::::::: "+statusdate);
         this.regnum = regnum;
         this.linkid = linkid;
+        this.option = option;
 		return this;
 	}	
 }

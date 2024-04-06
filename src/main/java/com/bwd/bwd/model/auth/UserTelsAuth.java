@@ -33,6 +33,8 @@ public class UserTelsAuth {
     @Column(name = "date_added")
    	public java.sql.Timestamp date_added;
     
+	public java.sql.Timestamp date_verified;
+	
     public UserTelsAuth()
 	{
 		

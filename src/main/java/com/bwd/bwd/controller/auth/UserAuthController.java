@@ -639,16 +639,22 @@ public class UserAuthController {
 		String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
 		int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
 		
+		
+		
 		String sql = "select mark from company where companyid="+companyid;
 		String mark = jdbcTemplate.queryForObject(sql, String.class);
+				
+		String sql2 ="SELECT comptoken from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
+		int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);	
 		
 		
 		
-		String sql2 ="SELECT comptokenid FROM companytoken_tbl WHERE companyid="+companyid;
-		int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);		
+		//String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
+		int jobid = 0 ; //jdbcTemplate.queryForObject(sql3, Integer.class);
 		
-		String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
-		int jobid = jdbcTemplate.queryForObject(sql3, Integer.class);
+		String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
+		int option = jdbcTemplate.queryForObject(sql4, Integer.class);	
+		System.out.println("Token : "+option);
 		
 		UserAccountsAuth uaa = new UserAccountsAuth();
 	    uaar.save(uaa); 
@@ -663,7 +669,7 @@ public class UserAuthController {
 	    userAccount.setPassword(password1);
 	    
 	    //UserAccountsAuth userAccountsAuth = uaa.createAccount(userAccount, regnum, linkid1);
-	    uaar.save(uaa.createAccount(userAccount, regnum, linkid1));
+	    uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
 		
 		Long id = uaa.getUseraccountid();
 		int convertedId = id.intValue();
@@ -678,9 +684,9 @@ public class UserAuthController {
 		UesrTokenAuth utoa = new UesrTokenAuth();
 		utor.save(utoa.createToken(convertedId, companyid, comptokenid));
 	
-		
+		String companyemail = userAccount.getEmail();
 		UserAssociationAuth uaca = new UserAssociationAuth();
-		uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid));
+		uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,userAccount.getParticipanttype() ));
         return ResponseEntity.ok("User registered successfully");
     }
 

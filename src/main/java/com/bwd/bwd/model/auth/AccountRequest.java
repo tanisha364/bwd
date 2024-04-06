@@ -20,4 +20,5 @@ public class AccountRequest {
 	private String tel;
 	private int telCode;
 	private int isvet;
+	private int participanttype;
 }

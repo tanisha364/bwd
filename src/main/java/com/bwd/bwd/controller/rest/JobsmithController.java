@@ -2446,7 +2446,7 @@ public class JobsmithController {
 
 					if (hasPermission) {							
 
-						String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
+						String accountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
 						Long useraccountId = (Long) accountIdData.get(0).get("useraccountid");
 						int useraccountIdInt = useraccountId.intValue();

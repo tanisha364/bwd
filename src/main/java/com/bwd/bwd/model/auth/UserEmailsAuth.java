@@ -31,8 +31,6 @@ public class UserEmailsAuth
     @Column(name = "created")
 	public java.sql.Timestamp created;
     
-    public java.sql.Timestamp date_verified;
-    
     @Column(name = "`primary`")
     private int primary = 1;
     
@@ -53,8 +51,7 @@ public class UserEmailsAuth
 		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();		
 		this.useraccountid = id;
 		this.email = email;
-		this.created = (java.sql.Timestamp)dt;		
-		this.date_verified = (java.sql.Timestamp)dt;	
+		this.created = (java.sql.Timestamp)dt;	
 		return this;
 	}    
 }
