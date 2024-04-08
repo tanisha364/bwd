@@ -46,6 +46,7 @@ import com.bwd.bwd.serviceimpl.Base64JsonServiceImpl;
 import com.bwd.bwd.serviceimpl.JWTServiceImpl;
 import com.bwd.bwd.serviceimpl.JwtUserToken;
 import com.bwd.bwd.serviceimpl.UserInfoImpl;
+import com.bwd.bwd.util.DateTimeCreation;
 
 import io.jsonwebtoken.Claims;
 
@@ -204,10 +205,12 @@ public class UserAuthController {
 			String useridToken = jwtToken;
 
 			UserAccountsAuth user = uaar.getReferenceById(ai.getUseraccountid());
+			user.setLastvisit(DateTimeCreation.getModifedTimestamp());
 			user.setUserid(useridToken);
 			user.setRefreshtoken(refreshToken);
 			uaar.save(user);
 
+			ai.setEmail(data.getEmail());
 			ai.setUserid(user.getUserid());
 			ai.setRefreshtoken(user.getRefreshtoken());
 			dr.setUserinfo(ai);

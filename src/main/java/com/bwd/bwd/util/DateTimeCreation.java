@@ -26,6 +26,13 @@ public class DateTimeCreation {
 	    return date;
 	}
 	
+	public static java.sql.Timestamp getModifedTimestamp()
+    {
+		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
+		java.sql.Timestamp modified = (java.sql.Timestamp)dt;    
+		return modified;
+    }    
+	
 	public static java.sql.Timestamp getSqlTimestamp()
 	{
 		Calendar calendar = Calendar.getInstance();
