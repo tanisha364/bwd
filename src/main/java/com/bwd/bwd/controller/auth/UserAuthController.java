@@ -35,9 +35,14 @@ import com.bwd.bwd.response.AuthInfo;
 import com.bwd.bwd.response.AuthResponse;
 import com.bwd.bwd.response.AuthTokenResponse;
 import com.bwd.bwd.response.DataResponse;
+import com.bwd.bwd.response.RegDataResponse;
+import com.bwd.bwd.response.RegInfo;
+import com.bwd.bwd.response.RegisterResponse;
+import com.bwd.bwd.response.ResponsePermission;
 import com.bwd.bwd.response.StatusResponse;
 import com.bwd.bwd.response.TokenInfo;
 import com.bwd.bwd.response.TokenResponse;
+import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserTokenInfo;
 import com.bwd.bwd.response.UserTokenResponse;
 import com.bwd.bwd.service.AuthServices;
@@ -635,63 +640,113 @@ public class UserAuthController {
 	}		
 	
 	
-	
-	@PostMapping("/register/user")
-    public ResponseEntity<String> registerUser(@RequestBody AccountRequest userAccount) {
-		
-		String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
-		int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
-		
-		
-		
-		String sql = "select mark from company where companyid="+companyid;
-		String mark = jdbcTemplate.queryForObject(sql, String.class);
-				
-		String sql2 ="SELECT comptoken from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
-		int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);	
-		
-		
-		
-		//String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
-		int jobid = 0 ; //jdbcTemplate.queryForObject(sql3, Integer.class);
-		
-		String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
-		int option = jdbcTemplate.queryForObject(sql4, Integer.class);	
-		System.out.println("Token : "+option);
-		
-		UserAccountsAuth uaa = new UserAccountsAuth();
-	    uaar.save(uaa); 
-	    Long useraccountid = uaa.getUseraccountid();
-	    String regnum = mark + useraccountid;
-	   
-        String linkid1 = UserInfoImpl.generateUniqueLinkId();
-	    
-	    AuthServiceImpl asi = new AuthServiceImpl();
-	    
-	    String password1 = asi.getHash(userAccount.getPassword());
-	    userAccount.setPassword(password1);
-	    
-	    //UserAccountsAuth userAccountsAuth = uaa.createAccount(userAccount, regnum, linkid1);
-	    uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
-		
-		Long id = uaa.getUseraccountid();
-		int convertedId = id.intValue();
-		
-		UserEmailsAuth uea = new UserEmailsAuth();
-		uer.save(uea.createEmail(id, userAccount.getEmail() ));
-		
-		UserTelsAuth uta = new UserTelsAuth();
-		utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
 
-		
-		UesrTokenAuth utoa = new UesrTokenAuth();
-		utor.save(utoa.createToken(convertedId, companyid, comptokenid));
-	
-		String companyemail = userAccount.getEmail();
-		UserAssociationAuth uaca = new UserAssociationAuth();
-		uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,userAccount.getParticipanttype() ));
-        return ResponseEntity.ok("User registered successfully");
-    }
+	@PostMapping("/register/user")
+	public ResponseEntity<RegisterResponse> registerUser(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody AccountRequest userAccount) {
+		String message = "";
+		ResponseEntity<RegisterResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		RegisterResponse rr = new RegisterResponse();
+		StatusResponse sr = new StatusResponse();
+
+		//UserAccountsAuth uaa = new UserAccountsAuth();
+
+		RegInfo ui = new RegInfo();    	
+		RegDataResponse rdr = new RegDataResponse();
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if(validToken)
+		{
+			try {
+
+				String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
+				int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
+
+
+
+				String sql = "select mark from company where companyid="+companyid;
+				String mark = jdbcTemplate.queryForObject(sql, String.class);
+
+				String sql2 ="SELECT comptoken from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
+				int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);	
+
+
+
+				//String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
+				int jobid = 0 ; //jdbcTemplate.queryForObject(sql3, Integer.class);
+
+				String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
+				int option = jdbcTemplate.queryForObject(sql4, Integer.class);	
+				
+
+				String linkid1 = UserInfoImpl.generateUniqueLinkId();
+					
+				UserAccountsAuth uaa = new UserAccountsAuth();
+			    uaar.save(uaa); 
+			    Long useraccountid = uaa.getUseraccountid();
+			    String regnum = mark + useraccountid;
+		       
+			    AuthServiceImpl asi = new AuthServiceImpl();
+
+			    String password1 = asi.getHash(userAccount.getPassword());
+			    userAccount.setPassword(password1);
+
+				uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
+
+				Long id = uaa.getUseraccountid();
+				int convertedId = id.intValue();
+
+				UserEmailsAuth uea = new UserEmailsAuth();
+				uer.save(uea.createEmail(id, userAccount.getEmail() ));
+
+				UserTelsAuth uta = new UserTelsAuth();
+				utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
+
+
+				UesrTokenAuth utoa = new UesrTokenAuth();
+				utor.save(utoa.createToken(convertedId, companyid, comptokenid));
+
+				String companyemail = userAccount.getEmail();
+				UserAssociationAuth uaca = new UserAssociationAuth();
+				uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,userAccount.getParticipanttype() ));
+
+				ui.setLinkid(linkid1);
+				rdr.setUserinfo(ui);
+				rr.setData(rdr);
+
+				message = "User Registered successfully";    
+
+				sr.setValid(true);
+				sr.setStatusCode(1);
+				sr.setMessage(message);   
+
+				rr.setStatus(sr);
+				entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+
+			}catch (Exception ex) {
+				ex.printStackTrace();
+				System.out.println(ex.getMessage());			
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or Unauthentic User");
+				rr.setStatus(sr);
+				entity = new ResponseEntity<>(rr, headers, HttpStatus.NOT_FOUND);
+			}
+		}
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");			
+			rr.setStatus(sr);
+			entity = new ResponseEntity<>(rr, headers, HttpStatus.UNAUTHORIZED);
+		} 
+
+		return entity;
+	} 
 
 	
 }

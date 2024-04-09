@@ -76,9 +76,6 @@ public class UserAccountsAuth {
         this.password = dataJRR.getPassword();
         this.isvet = dataJRR.getIsvet();
         this.statusdate = (java.sql.Timestamp)dt;
-        this.lastvisit = (java.sql.Timestamp)dt;
-        
-        System.out.println(":::::::::::::::::::::::: "+statusdate);
         this.regnum = regnum;
         this.linkid = linkid;
         this.option = option;
