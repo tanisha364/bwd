@@ -9,7 +9,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.bwd.bwd.db.DBOperation;
-import com.bwd.bwd.db.DBSearch;
 import com.bwd.bwd.request.UserData;
 import com.bwd.bwd.response.StatusResponse;
 import com.bwd.bwd.response.company.CompanyDetailsResponse;
