@@ -74,7 +74,7 @@ public class ReadFileService {
 		{		    	  
 			String[] parts = line.split("=");
 			
-			if(parts.length>=2)
+			if(parts.length==2)
 			{
 				String keyline = parts[0];
 				String valueline = parts[1];
@@ -84,7 +84,19 @@ public class ReadFileService {
 					value = valueline;
 					break;
 				}
+			}else if(parts.length==3)
+			{
+				String keyline = parts[0];
+				String valueline = parts[1]+"="+parts[2];
+
+				if(keyline.equals(key))
+				{
+					value = valueline;
+					break;
+				}
 			}
+				
+			
 		}
 		return value;
 	}

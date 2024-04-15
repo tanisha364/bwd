@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import com.bwd.bwd.util.ReadFileService;
+
 import org.springframework.stereotype.Service;
+
+import com.bwd.bwd.util.ReadFileService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -13,8 +15,8 @@ import jakarta.persistence.PersistenceContext;
 @Service
 public class DBConnection 
 {
-	@PersistenceContext
-	EntityManager entityManager;
+	//@PersistenceContext
+	//EntityManager entityManager;
 	private String uriName;
 	private String dsnName;
 	private String driverName;
@@ -31,14 +33,14 @@ public class DBConnection
 //		driverName = "com.mysql.cj.jdbc.Driver";
 //		username = "itneer";
 //		password = "Rdev@2022";
-
+		
 		ReadFileService rfs = new ReadFileService();
 		dsnName = rfs.getPropertyValue("spring.datasource.dsnName");
 		uriName = rfs.getPropertyValue("spring.datasource.url");
 		driverName = rfs.getPropertyValue("spring.datasource.driver-class-name");
 		username = rfs.getPropertyValue("spring.datasource.username");
 		password = rfs.getPropertyValue("spring.datasource.password");		
-		
+
 		try
 		{
 			if(con==null)
