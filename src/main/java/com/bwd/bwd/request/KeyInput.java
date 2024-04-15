@@ -8,8 +8,8 @@ import lombok.Setter;
 @JavaBean
 @Getter
 @Setter
-public class KeyInput {
-	
+public class KeyInput 
+{
 	private int keylenght;
-
+	private String keyFetch;
 }

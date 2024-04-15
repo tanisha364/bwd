@@ -1,7 +1,6 @@
 package com.bwd.bwd.model.auth;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 
 import com.bwd.bwd.util.DateTimeCreation;
 

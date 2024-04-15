@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bwd.bwd.model.UserAccounts;
 import com.bwd.bwd.repository.UserAccountsRepo;
+import com.bwd.bwd.request.KeyInput;
 import com.bwd.bwd.request.LoginData;
 import com.bwd.bwd.response.LoginResponse;
 import com.bwd.bwd.service.LoginServices;
 import com.bwd.bwd.serviceimpl.LoginServicesImpl;
+import com.bwd.bwd.util.ReadFileService;
 
 @CrossOrigin("*")
 @RestController
@@ -72,4 +74,18 @@ public class CheckController {
 	{
 		return uar.findAll();
 	}
+	
+	@PostMapping("/checkproperty")
+	public String checkproperty(@RequestBody KeyInput keyInput)
+	{
+//		MyService  ms = new MyService();
+//		return ms.getMyProperty();
+
+		ReadFileService rfs = new ReadFileService();
+		String key =  keyInput.getKeyFetch(); // "spring.datasource.url";
+		String value = rfs.getPropertyValue(key);
+		System.out.println(key +"  = "+value);	
+		
+		return key +"  = "+value;
+	}	
 }

@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import com.bwd.bwd.model.auth.OauthClients;
 import com.bwd.bwd.repository.OauthClientsRepo;
 import com.bwd.bwd.request.TokenInfoReq;
-import com.bwd.bwd.response.TokenInfo;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
