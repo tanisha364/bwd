@@ -45,6 +45,7 @@ public class UserAccountsAuth {
 	@Column(name = "status")
 	private BigDecimal status = BigDecimal.valueOf(1);
 	
+	@Column(name = "statusdate", columnDefinition = "DATETIME")
 	public java.sql.Timestamp statusdate;
 	
 	@Column(name = "password")	

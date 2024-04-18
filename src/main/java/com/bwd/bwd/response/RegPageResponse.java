@@ -10,5 +10,5 @@ import lombok.Setter;
 @Setter
 @JavaBean
 public class RegPageResponse {
-	private List<RegTextResponse> rt;	
+	private RegTextResponse rt;	
 }

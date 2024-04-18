@@ -65,37 +65,38 @@ import io.jsonwebtoken.Claims;
 @RestController
 
 public class UserAuthController {
-	
-	String 	tokenType = "Bearer";
-	
+
+	String tokenType = "Bearer";
+
 	@Autowired
-	OauthClientsRepo ocr;	
-	
+	OauthClientsRepo ocr;
+
 	@Autowired
-	UserAccountsAuthRepo uaar;	
-	
+	UserAccountsAuthRepo uaar;
+
 	@Autowired
-	UserEmailAuthRepo uer;	
-	
+	UserEmailAuthRepo uer;
+
 	@Autowired
-	UserTelAuthRepo utr;	
-	
+	UserTelAuthRepo utr;
+
 	@Autowired
-	UserTokenAuthRepo utor;		
-	
+	UserTokenAuthRepo utor;
+
 	@Autowired
 	UserAssociationAuthRepo uacar;
-	
+
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-	
+
 	@Value("${image.file.name}")
-    private String imageFileName;
-	
+	private String imageFileName;
+
 	@GetMapping("/token")
-	public ResponseEntity<TokenResponse> generateBasicToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+	public ResponseEntity<TokenResponse> generateBasicToken(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
 		ResponseEntity<TokenResponse> entity = null;
-		
+
 		String[] parts = authorizationHeader.split(" ");
 
 		String tokenType = parts[0];
@@ -112,101 +113,84 @@ public class UserAuthController {
 
 			OauthClients oc = bjsi.getObject(jsonObject);
 
-			entity = generateToken(oc,"Bearer");
+			entity = generateToken(oc, "Bearer");
 		}
-		return entity;		
-	}		
-	
-	@PostMapping("/validate/user")
-	public ResponseEntity<AuthTokenResponse> validateUserWithToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-			@RequestBody LoginData data) {
+		return entity;
+	}
 
-		AuthTokenResponse atr = new AuthTokenResponse();		
+	@PostMapping("/validate/user")
+	public ResponseEntity<AuthTokenResponse> validateUserWithToken(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody LoginData data) {
+
+		AuthTokenResponse atr = new AuthTokenResponse();
 		StatusResponse sr = new StatusResponse();
 		TokenResponse tr = new TokenResponse();
 		AuthResponse ar = new AuthResponse();
 		AuthInfo ai = new AuthInfo();
-		
+
 		ResponseEntity<AuthTokenResponse> entity = null;
 		HttpHeaders headers = new HttpHeaders();
-		
+
 		ResponseEntity<TokenResponse> entityToken = null;
 		ResponseEntity<AuthResponse> entityAuth = null;
-		
+
 		entityToken = validateBearerToken(authorizationHeader);
-		
-		tr = entityToken.getBody();		
-		StatusResponse srToken = tr.getStatus();		
+
+		tr = entityToken.getBody();
+		StatusResponse srToken = tr.getStatus();
 		boolean validToken = srToken.isValid();
 		int statuscodeToken = srToken.getStatusCode();
-		
-		entityAuth = validateUser(data);	
+
+		entityAuth = validateUser(data);
 		ar = entityAuth.getBody();
 		DataResponse dr = ar.getData();
 		ai = dr.getUserinfo();
-		StatusResponse srAuth = ar.getStatus();		
-		boolean validAuth = srAuth.isValid();	
+		StatusResponse srAuth = ar.getStatus();
+		boolean validAuth = srAuth.isValid();
 		boolean isUpdateToken = false;
-	/*		 
-		 StatusCode - 0    :    Unauthentic User with Unauthentic Token
-		 StatusCode - 1    :    Authentic User with Authentic Token		valid - true
-		 StatusCode - 2    :    Authentic User with Expired Token
-		 StatusCode - 3    :    Unauthentic User with Authentic Token
-		 StatusCode - 4    :    Unauthentic User with Expired Token
-		 		 
-	*/
-		
-		if(validToken)
-		{			
-			if(validAuth)
-			{
+		/*
+		 * StatusCode - 0 : Unauthentic User with Unauthentic Token StatusCode - 1 :
+		 * Authentic User with Authentic Token valid - true StatusCode - 2 : Authentic
+		 * User with Expired Token StatusCode - 3 : Unauthentic User with Authentic
+		 * Token StatusCode - 4 : Unauthentic User with Expired Token
+		 * 
+		 */
+
+		if (validToken) {
+			if (validAuth) {
 				sr.setValid(true);
 				sr.setStatusCode(1);
 				isUpdateToken = true;
 				sr.setMessage("Authentic User with Authentic Token");
-			}
-			else
-			{
+			} else {
 				sr.setValid(false);
 				sr.setStatusCode(3);
-				sr.setMessage("Unauthentic User with Authentic Token");				
+				sr.setMessage("Unauthentic User with Authentic Token");
 			}
-		}
-		else
-		{	
-			sr.setValid(false);	
-			if(validAuth)
-			{	
-				if(statuscodeToken==2)
-				{
+		} else {
+			sr.setValid(false);
+			if (validAuth) {
+				if (statuscodeToken == 2) {
 					sr.setMessage("Authentic User with Expired Token");
 					ar = null;
-					
+
 					sr.setStatusCode(2);
-				}
-				else
-				{
+				} else {
 					sr.setMessage("Authentic User with Unauthentic Token");
 					sr.setStatusCode(3);
 				}
-			}
-			else
-			{
-				if(statuscodeToken==2)
-				{
+			} else {
+				if (statuscodeToken == 2) {
 					sr.setMessage("Unauthentic User with Expired Token");
 					sr.setStatusCode(4);
-				}
-				else
-				{
+				} else {
 					sr.setMessage("Unauthentic User with Unauthentic Token");
 					sr.setStatusCode(0);
 				}
-			}			
-		}	
-		
-		if(isUpdateToken)
-		{
+			}
+		}
+
+		if (isUpdateToken) {
 			JwtUserToken jut = new JwtUserToken();
 			UserEmails userEmails = new UserEmails();
 			userEmails.setEmail(ai.getEmail());
@@ -230,23 +214,23 @@ public class UserAuthController {
 			ar.setData(dr);
 			System.out.println(useridToken);
 		}
-		
+
 		atr.setAuthData(ar);
 		atr.setStatus(sr);
-		
+
 		entity = new ResponseEntity<>(atr, headers, HttpStatus.OK);
-		
-		return entity;		
+
+		return entity;
 	}
 
 	public ResponseEntity<TokenResponse> generateToken(@RequestBody OauthClients data, String tokenType) {
-		
+
 		this.tokenType = tokenType;
 		ResponseEntity<TokenResponse> entity = generateToken(data);
 
 		return entity;
-	}	
-	
+	}
+
 	public ResponseEntity<TokenResponse> generateToken(@RequestBody OauthClients data) {
 
 		HttpHeaders headers = new HttpHeaders();
@@ -256,7 +240,6 @@ public class UserAuthController {
 		TokenResponse tr = new TokenResponse();
 
 		TokenInfo ti = new TokenInfo();
-
 
 		JWTServiceImpl jsi = new JWTServiceImpl();
 		UserDetails userDetails = data;
@@ -295,14 +278,14 @@ public class UserAuthController {
 
 		return entity;
 	}
-	
+
 	public Long validateRoute(@RequestBody OauthClients data) {
 		Long found = 0L;
 		found = ocr.isRecordExist(data.getUsername(), data.getPassword());
 		System.out.println("fOUND = " + found + " - " + data.getUsername() + " - " + data.getPassword());
 		return found;
-	}	
-	
+	}
+
 	public ResponseEntity<TokenResponse> validateBearerToken(
 			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
 		JWTServiceImpl jsi = new JWTServiceImpl();
@@ -318,8 +301,7 @@ public class UserAuthController {
 		String token = "";
 		String tokenType = parts[0];
 		boolean validTokenTypes = false;
-		if(tokenType.endsWith("Bearer") || tokenType.equals("Basic"))
-		{
+		if (tokenType.endsWith("Bearer") || tokenType.equals("Basic")) {
 			validTokenTypes = true;
 		}
 		if (parts.length == 2 && validTokenTypes) {
@@ -329,7 +311,7 @@ public class UserAuthController {
 			TokenInfoReq tir = null;
 
 //			ti = jsi.parseToken(token,tokenType);
-			tir = jsi.parseToken(token,tokenType);
+			tir = jsi.parseToken(token, tokenType);
 			long currentSystemTime = System.currentTimeMillis();
 			if (currentSystemTime > tir.getExp()) {
 				sr.setMessage("Token Expire");
@@ -428,7 +410,7 @@ public class UserAuthController {
 						if (ai.getUserLevel() == 1 || ai.getUserLevel() == 8 || ai.getUserLevel() == 9) {
 							if (sr.getStatusCode() == 2) {
 								sr.setValid(true);
-								sr.setStatusCode(6);								
+								sr.setStatusCode(6);
 								sr.setMessage("Successful login");
 							} else {
 								ai.setUseraccountid(null);
@@ -527,13 +509,13 @@ public class UserAuthController {
 		}
 		return entity;
 	}
-	
+
 	@GetMapping("/getuseraccountid")
 	public long getUserAccountId(@RequestHeader(HttpHeaders.USER_AGENT) String data) {
 		long useraccountid = -1l;
 		UserAccountsAuth uaa = new UserAccountsAuth();
-		System.out.println("RKA "+data);
-		try {	
+		System.out.println("RKA " + data);
+		try {
 			uaa = uaar.getReferenceByUserid(data);
 			useraccountid = uaa.getUseraccountid();
 		} catch (Exception ex) {
@@ -541,17 +523,16 @@ public class UserAuthController {
 			System.out.println(ex.getMessage());
 		}
 		return useraccountid;
-	}	
-	
+	}
+
 	@GetMapping("/getuseraccountidheader")
-	public long getUserAccountId(
-			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, 
-			@RequestHeader(HttpHeaders.USER_AGENT) String data) {	
+	public long getUserAccountId(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+			@RequestHeader(HttpHeaders.USER_AGENT) String data) {
 		long useraccountid = -1l;
-		
+
 		return useraccountid;
 	}
-	
+
 	/*
 	 * private long fetchUserAccountId(UserData data) { long useraccountid = -1l;
 	 * UserAccountsAuth uaa = new UserAccountsAuth();
@@ -560,15 +541,16 @@ public class UserAuthController {
 	 * uaa.getUseraccountid(); } catch (Exception ex) { ex.printStackTrace();
 	 * System.out.println(ex.getMessage()); } return useraccountid; }
 	 */
-	
+
 	@PostMapping("/refreshtoken")
-	public ResponseEntity<UserTokenResponse> generateRefreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserAccountsAuth userAccountsAuth) 
-	{
+	public ResponseEntity<UserTokenResponse> generateRefreshToken(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+			@RequestBody UserAccountsAuth userAccountsAuth) {
 		ResponseEntity<UserTokenResponse> entity = null;
 		HttpHeaders headers = new HttpHeaders();
 		JwtUserToken jut = new JwtUserToken();
 
-		UserTokenResponse utr = new UserTokenResponse();		
+		UserTokenResponse utr = new UserTokenResponse();
 		UserTokenInfo uti = new UserTokenInfo();
 		StatusResponse sr = new StatusResponse();
 
@@ -582,11 +564,9 @@ public class UserAuthController {
 
 		validToken = checkToken(authorizationHeader);
 
-		if(validToken)
-		{
-			try
-			{			
-				userEmails =  jut.getUserEmailClaims(refreshtoken);
+		if (validToken) {
+			try {
+				userEmails = jut.getUserEmailClaims(refreshtoken);
 
 				String jwtToken = jut.generateToken(userEmails);
 				String refreshToken = jut.refreshToken(jwtToken);
@@ -594,45 +574,42 @@ public class UserAuthController {
 				UserAccountsAuth user = uaar.getReferenceById(userEmails.getUseraccountid());
 				user.setUserid(jwtToken);
 				user.setRefreshtoken(refreshToken);
-				uaar.save(user);			
+				uaar.save(user);
 
 				uti.setUserToken(jwtToken);
 				uti.setRefreshToken(refreshToken);
 
 				sr.setMessage("JWT token refreshed  successfully");
 				sr.setValid(true);
-				sr.setStatusCode(1);			
+				sr.setStatusCode(1);
 
 				entity = new ResponseEntity<>(utr, headers, HttpStatus.OK);
 
-			}catch(io.jsonwebtoken.ExpiredJwtException ejex) {
+			} catch (io.jsonwebtoken.ExpiredJwtException ejex) {
 				entity = new ResponseEntity<>(utr, headers, HttpStatus.UNAUTHORIZED);
-				System.out.println("JWT Refresh token expired : "+ejex.getMessage());
+				System.out.println("JWT Refresh token expired : " + ejex.getMessage());
 				sr.setMessage("JWT Refresh token expired");
 				sr.setValid(false);
 				sr.setStatusCode(22);
-			}catch(Exception ejex) {
+			} catch (Exception ejex) {
 				entity = new ResponseEntity<>(utr, headers, HttpStatus.UNAUTHORIZED);
-				System.out.println("Exception Occured OR Wrong Refresh Token : "+ejex.getMessage());
+				System.out.println("Exception Occured OR Wrong Refresh Token : " + ejex.getMessage());
 				sr.setMessage("Exception Occured OR Wrong Refresh Token");
 				sr.setValid(false);
 				sr.setStatusCode(23);
-			}			
-		}
-		else
-		{
+			}
+		} else {
 			sr.setValid(false);
 			sr.setStatusCode(20);
-			sr.setMessage("Unauthentic Token"); 
+			sr.setMessage("Unauthentic Token");
 		}
 
 		utr.setStatus(sr);
 		utr.setUserToken(uti);
-		return entity;		
-	}	
+		return entity;
+	}
 
-	public boolean checkToken(String authorizationHeader)
-	{
+	public boolean checkToken(String authorizationHeader) {
 		boolean validToken = false;
 
 		TokenResponse tr = new TokenResponse();
@@ -640,17 +617,17 @@ public class UserAuthController {
 
 		entityToken = validateBearerToken(authorizationHeader);
 
-		tr = entityToken.getBody();		
-		StatusResponse srToken = tr.getStatus();		
+		tr = entityToken.getBody();
+		StatusResponse srToken = tr.getStatus();
 		validToken = srToken.isValid();
 
 		return validToken;
-	}		
-	
-	
+	}
 
 	@PostMapping("/register/user")
-	public ResponseEntity<RegisterResponse> registerUser(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody AccountRequest userAccount) {
+	public ResponseEntity<RegisterResponse> registerUser(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+			@RequestBody AccountRequest userAccount) {
 		String message = "";
 		ResponseEntity<RegisterResponse> entity;
 		HttpHeaders headers = new HttpHeaders();
@@ -658,18 +635,18 @@ public class UserAuthController {
 		RegisterResponse rr = new RegisterResponse();
 		StatusResponse sr = new StatusResponse();
 
-		//UserAccountsAuth uaa = new UserAccountsAuth();
+		// UserAccountsAuth uaa = new UserAccountsAuth();
 
-		RegInfo ui = new RegInfo();    	
+		RegInfo ui = new RegInfo();
 		RegDataResponse rdr = new RegDataResponse();
 		boolean validToken = false;
 
 		validToken = checkToken(authorizationHeader);
 
-		if(validToken)
-		{
+		if (validToken) {
 			try {
-				String emailCheckSql = "SELECT COUNT(*) FROM user_email_tbl WHERE email = '" + userAccount.getEmail() + "'";
+				String emailCheckSql = "SELECT COUNT(*) FROM user_email_tbl WHERE email = '" + userAccount.getEmail()
+						+ "'";
 				int emailCount = jdbcTemplate.queryForObject(emailCheckSql, Integer.class);
 
 				if (emailCount > 0) {
@@ -678,162 +655,159 @@ public class UserAuthController {
 					sr.setMessage("Email already exists");
 					rr.setStatus(sr);
 					return new ResponseEntity<>(rr, headers, HttpStatus.BAD_REQUEST);
-				}else {
+				} else {
 
 					String linkid1 = UserInfoImpl.generateUniqueLinkId();
-					System.out.println("Exception Occured OR Wrong Refresh Token : "+linkid1);
-					
-				String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
-				int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
+					System.out.println("Exception Occured OR Wrong Refresh Token : " + linkid1);
 
+					String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode()
+							+ "' and landingid = " + userAccount.getLandingid();
+					int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
 
+					String sql = "select mark from company where companyid=" + companyid;
+					String mark = jdbcTemplate.queryForObject(sql, String.class);
 
-				String sql = "select mark from company where companyid="+companyid;
-				String mark = jdbcTemplate.queryForObject(sql, String.class);
+					String sql2 = "SELECT comptoken from landingpage where code = '" + userAccount.getCode()
+							+ "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
+					int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);
 
-				String sql2 ="SELECT comptoken from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
-				int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);	
+					// String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON
+					// j.departmentid = dep.departmentid WHERE companyid="+companyid;
+					int jobid = 0; // jdbcTemplate.queryForObject(sql3, Integer.class);
 
+					String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode()
+							+ "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
+					int option = jdbcTemplate.queryForObject(sql4, Integer.class);
 
+					UserAccountsAuth uaa = new UserAccountsAuth();
+					uaar.save(uaa);
+					Long useraccountid = uaa.getUseraccountid();
+					String regnum = mark + useraccountid;
 
-				//String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid="+companyid;
-				int jobid = 0 ; //jdbcTemplate.queryForObject(sql3, Integer.class);
+					AuthServiceImpl asi = new AuthServiceImpl();
 
-				String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid="+companyid;
-				int option = jdbcTemplate.queryForObject(sql4, Integer.class);		
-					
-				UserAccountsAuth uaa = new UserAccountsAuth();
-			    uaar.save(uaa); 
-			    Long useraccountid = uaa.getUseraccountid();
-			    String regnum = mark + useraccountid;
-		       
-			    AuthServiceImpl asi = new AuthServiceImpl();
+					String password1 = asi.getHash(userAccount.getPassword());
+					userAccount.setPassword(password1);
 
-			    String password1 = asi.getHash(userAccount.getPassword());
-			    userAccount.setPassword(password1);
+					uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
 
-				uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
+					Long id = uaa.getUseraccountid();
+					int convertedId = id.intValue();
 
-				Long id = uaa.getUseraccountid();
-				int convertedId = id.intValue();
+					UserEmailsAuth uea = new UserEmailsAuth();
+					uer.save(uea.createEmail(id, userAccount.getEmail()));
 
-				UserEmailsAuth uea = new UserEmailsAuth();
-				uer.save(uea.createEmail(id, userAccount.getEmail() ));
+					UserTelsAuth uta = new UserTelsAuth();
+					utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
 
-				UserTelsAuth uta = new UserTelsAuth();
-				utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
+					UesrTokenAuth utoa = new UesrTokenAuth();
+					utor.save(utoa.createToken(convertedId, companyid, comptokenid));
 
+					String companyemail = userAccount.getEmail();
+					UserAssociationAuth uaca = new UserAssociationAuth();
+					uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,
+							userAccount.getParticipanttype()));
 
-				UesrTokenAuth utoa = new UesrTokenAuth();
-				utor.save(utoa.createToken(convertedId, companyid, comptokenid));
+					ui.setLinkid(linkid1);
+					rdr.setUserinfo(ui);
+					rr.setData(rdr);
 
-				String companyemail = userAccount.getEmail();
-				UserAssociationAuth uaca = new UserAssociationAuth();
-				uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,userAccount.getParticipanttype() ));
+					message = "User Registered successfully";
 
-				ui.setLinkid(linkid1);
-				rdr.setUserinfo(ui);
-				rr.setData(rdr);
+					sr.setValid(true);
+					sr.setStatusCode(1);
+					sr.setMessage(message);
 
-				message = "User Registered successfully";    
-
-				sr.setValid(true);
-				sr.setStatusCode(1);
-				sr.setMessage(message);   
-
-				rr.setStatus(sr);
-				entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+					rr.setStatus(sr);
+					entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
 				}
-			}catch (Exception ex) {
+			} catch (Exception ex) {
 				ex.printStackTrace();
-				System.out.println(ex.getMessage());			
+				System.out.println(ex.getMessage());
 				sr.setValid(false);
 				sr.setStatusCode(0);
 				sr.setMessage("Unauthentic Token Or Unauthentic User");
 				rr.setStatus(sr);
 				entity = new ResponseEntity<>(rr, headers, HttpStatus.NOT_FOUND);
 			}
-		}
-		else
-		{
+		} else {
 			sr.setValid(false);
 			sr.setStatusCode(20);
-			sr.setMessage("Unauthentic Token");			
+			sr.setMessage("Unauthentic Token");
 			rr.setStatus(sr);
 			entity = new ResponseEntity<>(rr, headers, HttpStatus.UNAUTHORIZED);
-		} 
+		}
 
 		return entity;
-	} 
+	}
 
+	@SuppressWarnings("deprecation")
 	@PostMapping("/landingpage")
-	public ResponseEntity<TextResponse> registerText(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody AccountRequest userAccount) {
-		
+	public ResponseEntity<TextResponse> registerText(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+			@RequestBody AccountRequest userAccount) {
+
 		ResponseEntity<TextResponse> entity;
 		HttpHeaders headers = new HttpHeaders();
 
 		TextResponse tr = new TextResponse();
 		StatusResponse sr = new StatusResponse();
 		RegPageResponse rr = new RegPageResponse();
-				
+		RegTextResponse rtr = new RegTextResponse();
+
 		boolean validToken = false;
 
 		validToken = checkToken(authorizationHeader);
 
-		if(validToken)
-		{
+		if (validToken) {
 			try {
-				List<RegTextResponse> rtr = getPageReport(userAccount);
+
+				String query1 = "select logo from landingpage where code = '" + userAccount.getCode()
+						+ "' and landingid = " + userAccount.getLandingid();
+
+				System.out.println(query1);
+				jdbcTemplate.query(query1, new Object[] {}, rs -> {
+					   String logoFilename = rs.getString("logo");
+					    rtr.setLogo(imageFileName + logoFilename);
+				});
+
+				String query2 = "select text from pages where pageid =2 ";
+				System.out.println(query2);
+				jdbcTemplate.query(query2, new Object[] {}, rs -> {
+					rtr.setText(rs.getString("text"));
+				});
+				
+				String query3 = "select companyname from company c INNER JOIN landingpage lp ON c.companyid = lp.companyid where lp.code = '" + userAccount.getCode() + "' and lp.landingid = " + userAccount.getLandingid();
+				System.out.println(query3);
+				jdbcTemplate.query(query3, new Object[] {}, rs -> {
+					rtr.setCompanyname(rs.getString("companyname"));
+				});
+
 				rr.setRt(rtr);
 				sr.setValid(true);
 				sr.setStatusCode(1);
-				sr.setMessage("Registration page");                	
+				sr.setMessage("Registration page");
 
 				tr.setStatus(sr);
 				tr.setData(rr);
-				entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);     
-			}catch (Exception ex) {
-				ex.printStackTrace();	
+				entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
+			} catch (Exception ex) {
+				ex.printStackTrace();
 				sr.setValid(false);
 				sr.setStatusCode(0);
 				sr.setMessage("Unauthentic Token Or Unauthentic User");
 				tr.setData(null);
 				tr.setStatus(sr);
 				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);
-			}			
-		}
-		else
-		{
+			}
+		} else {
 			sr.setValid(false);
 			sr.setStatusCode(20);
 			sr.setMessage("Unauthentic Token");
 
-			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);	
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);
 			return entity;
-		} 
-		return entity;
-	}
-		
-	public List<RegTextResponse> getPageReport(AccountRequest userAccount)
-	{
-		DBOperation dbop = new DBOperation();
-		List<RegTextResponse> listJPR = new ArrayList<RegTextResponse>();
-		String [][]Data;
-
-		String sqlQuery = "select logo, welcome from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
-		dbop.setSelectQuery(sqlQuery);		
-		dbop.executeSelectQuery();
-		Data = dbop.fetchRecord();	
-		int dataLen = dbop.getNumberOfRow();
-		System.out.println("Lenght : "+dataLen);
-		for(int i=0;i<=dataLen;i++)
-		{
-			 RegTextResponse rtr = new RegTextResponse();
-		        rtr.setLogo(imageFileName + Data[i][0]);
-		        rtr.setText(Data[i][1]);
-		        listJPR.add(rtr);
 		}
-
-		return listJPR;
+		return entity;
 	}
 }
