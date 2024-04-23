@@ -656,29 +656,24 @@ public class UserAuthController {
 					rr.setStatus(sr);
 					return new ResponseEntity<>(rr, headers, HttpStatus.BAD_REQUEST);
 				} else {
-
 					String linkid1 = UserInfoImpl.generateUniqueLinkId();
 					System.out.println("Exception Occured OR Wrong Refresh Token : " + linkid1);
 
-					String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode()
-							+ "' and landingid = " + userAccount.getLandingid();
+					String sql1 = "select companyid from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
 					int companyid = jdbcTemplate.queryForObject(sql1, Integer.class);
 
 					String sql = "select mark from company where companyid=" + companyid;
 					String mark = jdbcTemplate.queryForObject(sql, String.class);
 
-					String sql2 = "SELECT comptoken from landingpage where code = '" + userAccount.getCode()
-							+ "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
+					String sql2 = "SELECT comptoken from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
 					int comptokenid = jdbcTemplate.queryForObject(sql2, Integer.class);
 
-					// String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON
-					// j.departmentid = dep.departmentid WHERE companyid="+companyid;
-					int jobid = 0; // jdbcTemplate.queryForObject(sql3, Integer.class);
+					String sql3 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid= "+companyid +" AND dep.subof = -1 LIMIT 1";
+					int jobid = jdbcTemplate.queryForObject(sql3, Integer.class);
 
-					String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode()
-							+ "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
+					String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
 					int option = jdbcTemplate.queryForObject(sql4, Integer.class);
-
+					
 					UserAccountsAuth uaa = new UserAccountsAuth();
 					uaar.save(uaa);
 					Long useraccountid = uaa.getUseraccountid();

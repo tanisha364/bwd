@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 
-@Table(name = "rka_user_accounts")
+@Table(name = "user_accounts")
 @Entity
 @Getter
 @Setter
