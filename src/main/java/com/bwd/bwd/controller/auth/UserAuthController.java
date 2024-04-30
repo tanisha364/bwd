@@ -2,6 +2,7 @@ package com.bwd.bwd.controller.auth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bwd.bwd.db.DBOperation;
 import com.bwd.bwd.model.auth.AccountRequest;
 import com.bwd.bwd.model.auth.OauthClients;
+import com.bwd.bwd.model.auth.QuestionAssignmentAuth;
 import com.bwd.bwd.model.auth.UesrTokenAuth;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.model.auth.UserAssociationAuth;
@@ -28,6 +30,7 @@ import com.bwd.bwd.model.auth.UserEmailsAuth;
 import com.bwd.bwd.model.auth.UserTelsAuth;
 import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
+import com.bwd.bwd.repository.QuestionAssignmentAuthRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.repository.UserAssociationAuthRepo;
 import com.bwd.bwd.repository.UserEmailAuthRepo;
@@ -85,6 +88,9 @@ public class UserAuthController {
 
 	@Autowired
 	UserAssociationAuthRepo uacar;
+	
+	@Autowired
+	QuestionAssignmentAuthRepo qaar;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -702,6 +708,20 @@ public class UserAuthController {
 					UserAssociationAuth uaca = new UserAssociationAuth();
 					uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,
 							userAccount.getParticipanttype()));
+					
+					String sql6 = "select test_id, archived, squence from landing_questionnaire_tbl lqt INNER JOIN landingpage lp ON lqt.landing_assessment_id = lp.landingassessmentid where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
+					System.out.println("Token : " + sql6);
+
+					List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql6);
+
+					for (Map<String, Object> row : rows) {
+					    int testId = (int) row.get("test_id");
+					    int archived = (int) row.get("archived");
+					    int sequence = (int) row.get("squence");
+
+					    QuestionAssignmentAuth qaa = new QuestionAssignmentAuth();
+					    qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
+					}
 
 					ui.setLinkid(linkid1);
 					rdr.setUserinfo(ui);
