@@ -26,8 +26,8 @@ public class UserAccounts {
 	@Column(name = "username")	
 	private String username;
 	
-	@Column(name = "password")	
-	private String password;
+	//@Column(name = "password")	
+	//private String password;
 	
 	@Column(name = "email")	
 	private String email;
@@ -40,5 +40,16 @@ public class UserAccounts {
 	
 	@Column(name = "lastname")	
 	private String lastname;
+	
+	//@Column(name = "hashpassword")	
+	//private String hashpassword;		
+	
+	
+	/*
+	`user_accounts`
+    `useraccountid`, `inviteeid`, `old_inviteeid`, `regnum`, `username`, `password`, `userid`, `userlevel`,
+    `email`, `timestamp`, `firstname`, `lastname`, `status`, `statusdate`, `violation`, `status_approved`, `
+     modified`, `lastvisit`, `linkid`, `option`, `customerid`, `landingassessmentid`, `isvet`	 
+*/	
 
 }

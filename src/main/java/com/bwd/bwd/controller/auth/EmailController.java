@@ -16,17 +16,14 @@ public class EmailController {
 
 	@Autowired
 	private EmailService emailService;
+	
+	@Autowired
+	private UserAuthController ua;
 
 	@PostMapping("/sendMail")
 	public ResponseEntity<?> sendMail(@RequestBody EmailDetails details)
 	{
-		emailService.sendEmail(details);
+		emailService.sendEmail(details,ua.generateLink,ua.email);
 		return ResponseEntity.ok(customEmailResponse.builder().message("Email sent....").status(HttpStatus.OK).success(true).build());   
-	}
-	
-	/*
-	 * @PostMapping("/generateLink") public ResponseEntity<?> generateLink() {
-	 * 
-	 * }
-	 */
+	}	
 }

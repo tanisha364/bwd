@@ -97,9 +97,10 @@ public class UserAuthController {
 
 	@Value("${image.file.name}")
 	private String imageFileName;
-
-	String generateLink;
 	
+	String generateLink;
+	String email;
+
 	@GetMapping("/token")
 	public ResponseEntity<TokenResponse> generateBasicToken(
 			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
@@ -689,7 +690,7 @@ public class UserAuthController {
 					Long useraccountid = uaa.getUseraccountid();
 					String regnum = mark + useraccountid;
 
-					AuthServiceImpl asi = new AuthServiceImpl();
+					//AuthServiceImpl asi = new AuthServiceImpl();
 
 					//String password1 = asi.getHash(userAccount.getPassword());
 					//userAccount.setPassword(password1);
@@ -702,7 +703,8 @@ public class UserAuthController {
 					UserEmailsAuth uea = new UserEmailsAuth();
 					uer.save(uea.createEmail(id, userAccount.getEmail(),verificationid));
 					Long bwdEmailId = uea.getBwdEmailId();
-
+				    email = uea.getEmail();
+					
 					UserTelsAuth uta = new UserTelsAuth();
 					utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
 
@@ -715,7 +717,6 @@ public class UserAuthController {
 							userAccount.getParticipanttype()));
 					
 					String sql6 = "select test_id, archived, squence from landing_questionnaire_tbl lqt INNER JOIN landingpage lp ON lqt.landing_assessment_id = lp.landingassessmentid where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
-					System.out.println("Token : " + sql6);
 
 					List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql6);
 
@@ -728,9 +729,11 @@ public class UserAuthController {
 					    qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
 					}
 
-					generateLink ="https://some.com?"+verificationid+bwdEmailId+"-"+useraccountid ;
-					System.out.println("/////////////////////////////////////// : " + generateLink);
-					
+				    generateLink ="https://some.com?"+verificationid+bwdEmailId+"-"+useraccountid ;
+										
+				    
+				    
+				    
 					ui.setLinkid(linkid1);
 					rdr.setUserinfo(ui);
 					rr.setData(rdr);
