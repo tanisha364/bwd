@@ -98,6 +98,9 @@ public class UserAuthController {
 	@Value("${image.file.name}")
 	private String imageFileName;
 	
+	@Value("${link.url}")
+	private String linkurl;
+	
 	String generateLink;
 	String email;
 
@@ -729,7 +732,7 @@ public class UserAuthController {
 					    qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
 					}
 
-				    generateLink ="https://some.com?"+verificationid+bwdEmailId+"-"+useraccountid ;
+				    generateLink =linkurl+verificationid+bwdEmailId+"-"+useraccountid ;
 										
 				    
 				    

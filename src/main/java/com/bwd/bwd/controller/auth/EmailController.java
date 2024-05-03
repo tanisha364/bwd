@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bwd.bwd.request.EmailDetails;
 import com.bwd.bwd.response.customEmailResponse;
 import com.bwd.bwd.service.EmailService;
 
@@ -21,9 +19,9 @@ public class EmailController {
 	private UserAuthController ua;
 
 	@PostMapping("/sendMail")
-	public ResponseEntity<?> sendMail(@RequestBody EmailDetails details)
+	public ResponseEntity<?> sendMail()
 	{
-		emailService.sendEmail(details,ua.generateLink,ua.email);
+		emailService.sendEmail(ua.generateLink,ua.email);
 		return ResponseEntity.ok(customEmailResponse.builder().message("Email sent....").status(HttpStatus.OK).success(true).build());   
 	}	
 }
