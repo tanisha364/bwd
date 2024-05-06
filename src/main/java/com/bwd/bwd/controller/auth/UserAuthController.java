@@ -1,15 +1,19 @@
 package com.bwd.bwd.controller.auth;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bwd.bwd.db.DBOperation;
@@ -62,6 +67,8 @@ import com.bwd.bwd.serviceimpl.UserInfoImpl;
 import com.bwd.bwd.util.DateTimeCreation;
 
 import io.jsonwebtoken.Claims;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 @CrossOrigin("*")
 @RequestMapping(path = "/auth", produces = "application/json")
@@ -101,8 +108,15 @@ public class UserAuthController {
 	@Value("${link.url}")
 	private String linkurl;
 	
-	String generateLink;
-	String email;
+	  @Autowired
+	    private JavaMailSender javaMailSender;
+
+	    @Value("${spring.mail.username}")
+	    private String sender;
+
+	    @Value("${spring.mail.display.name}")
+	    private String senderDisplayName;
+	
 
 	@GetMapping("/token")
 	public ResponseEntity<TokenResponse> generateBasicToken(
@@ -706,7 +720,7 @@ public class UserAuthController {
 					UserEmailsAuth uea = new UserEmailsAuth();
 					uer.save(uea.createEmail(id, userAccount.getEmail(),verificationid));
 					Long bwdEmailId = uea.getBwdEmailId();
-				    email = uea.getEmail();
+					String email = uea.getEmail();
 					
 					UserTelsAuth uta = new UserTelsAuth();
 					utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
@@ -732,10 +746,25 @@ public class UserAuthController {
 					    qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
 					}
 
-				    generateLink =linkurl+verificationid+bwdEmailId+"-"+useraccountid ;
+					String generateLink =linkurl+verificationid+bwdEmailId+"-"+useraccountid ;
 										
 				    
-				    
+				    MimeMessage mess = javaMailSender.createMimeMessage();
+			        MimeMessageHelper helper = new MimeMessageHelper(mess);  
+			        try {
+			            helper.setFrom(sender, senderDisplayName);
+			            helper.setTo(email);
+			            helper.setSubject("Your BestWork DATA User Registration has been received");
+
+			            String emailText = "Welcome! You've just registered at BestWork DATA with the following information:"
+			            		+ "  You will need to verify your email address before you can login to your account.  This is not required to complete the questionnaire. "
+			            		+ "To verify your email address simply click the following link: (if you cannot click link, then copy and paste into your browser)\n" + generateLink;
+			            helper.setText(emailText);
+
+			            javaMailSender.send(mess);
+			        } catch (MessagingException | UnsupportedEncodingException e) {
+			            e.printStackTrace();
+			        } 
 				    
 					ui.setLinkid(linkid1);
 					rdr.setUserinfo(ui);
