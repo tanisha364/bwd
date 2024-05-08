@@ -95,7 +95,7 @@ public class UserAuthController {
 
 	@Autowired
 	UserAssociationAuthRepo uacar;
-	
+
 	@Autowired
 	QuestionAssignmentAuthRepo qaar;
 
@@ -104,19 +104,19 @@ public class UserAuthController {
 
 	@Value("${image.file.name}")
 	private String imageFileName;
-	
+
 	@Value("${link.url}")
 	private String linkurl;
-	
-	  @Autowired
-	    private JavaMailSender javaMailSender;
 
-	    @Value("${spring.mail.username}")
-	    private String sender;
+	@Autowired
+	private JavaMailSender javaMailSender;
 
-	    @Value("${spring.mail.display.name}")
-	    private String senderDisplayName;
-	
+	@Value("${spring.mail.username}")
+	private String sender;
+
+	@Value("${spring.mail.display.name}")
+	private String senderDisplayName;
+
 
 	@GetMapping("/token")
 	public ResponseEntity<TokenResponse> generateBasicToken(
@@ -336,7 +336,7 @@ public class UserAuthController {
 			TokenInfo ti = null;
 			TokenInfoReq tir = null;
 
-//			ti = jsi.parseToken(token,tokenType);
+			//			ti = jsi.parseToken(token,tokenType);
 			tir = jsi.parseToken(token, tokenType);
 			long currentSystemTime = System.currentTimeMillis();
 			if (currentSystemTime > tir.getExp()) {
@@ -672,7 +672,7 @@ public class UserAuthController {
 		if (validToken) {
 			try {
 				String emailCheckSql = "SELECT COUNT(*) FROM user_email_tbl WHERE email = '" + userAccount.getEmail()
-						+ "'";
+				+ "'";
 				int emailCount = jdbcTemplate.queryForObject(emailCheckSql, Integer.class);
 
 				if (emailCount > 0) {
@@ -682,8 +682,8 @@ public class UserAuthController {
 					rr.setStatus(sr);
 					return new ResponseEntity<>(rr, headers, HttpStatus.BAD_REQUEST);
 				} else {
-                     String linkid1 = UserInfoImpl.generateUniqueLinkId();					
-					
+					String linkid1 = UserInfoImpl.generateUniqueLinkId();					
+
 					String verificationid = UserInfoImpl.generateUniqueLinkId(30);
 					System.out.println("Token : " + verificationid);
 
@@ -701,7 +701,7 @@ public class UserAuthController {
 
 					String sql4 = "SELECT defaultoption from landingpage where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid() + " and companyid=" + companyid;
 					int option = jdbcTemplate.queryForObject(sql4, Integer.class);
-					
+
 					UserAccountsAuth uaa = new UserAccountsAuth();
 					uaar.save(uaa);
 					Long useraccountid = uaa.getUseraccountid();
@@ -721,7 +721,7 @@ public class UserAuthController {
 					uer.save(uea.createEmail(id, userAccount.getEmail(),verificationid));
 					Long bwdEmailId = uea.getBwdEmailId();
 					String email = uea.getEmail();
-					
+
 					UserTelsAuth uta = new UserTelsAuth();
 					utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
 
@@ -732,40 +732,40 @@ public class UserAuthController {
 					UserAssociationAuth uaca = new UserAssociationAuth();
 					uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,
 							userAccount.getParticipanttype()));
-					
+
 					String sql6 = "select test_id, archived, squence from landing_questionnaire_tbl lqt INNER JOIN landingpage lp ON lqt.landing_assessment_id = lp.landingassessmentid where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
 
 					List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql6);
 
 					for (Map<String, Object> row : rows) {
-					    int testId = (int) row.get("test_id");
-					    int archived = (int) row.get("archived");
-					    int sequence = (int) row.get("squence");
+						int testId = (int) row.get("test_id");
+						int archived = (int) row.get("archived");
+						int sequence = (int) row.get("squence");
 
-					    QuestionAssignmentAuth qaa = new QuestionAssignmentAuth();
-					    qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
+						QuestionAssignmentAuth qaa = new QuestionAssignmentAuth();
+						qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
 					}
 
 					String generateLink =linkurl+verificationid+bwdEmailId+"-"+useraccountid ;
-										
-				    
-				    MimeMessage mess = javaMailSender.createMimeMessage();
-			        MimeMessageHelper helper = new MimeMessageHelper(mess);  
-			        try {
-			            helper.setFrom(sender, senderDisplayName);
-			            helper.setTo(email);
-			            helper.setSubject("Your BestWork DATA User Registration has been received");
 
-			            String emailText = "Welcome! You've just registered at BestWork DATA with the following information:"
-			            		+ "  You will need to verify your email address before you can login to your account.  This is not required to complete the questionnaire. "
-			            		+ "To verify your email address simply click the following link: (if you cannot click link, then copy and paste into your browser)\n" + generateLink;
-			            helper.setText(emailText);
 
-			            javaMailSender.send(mess);
-			        } catch (MessagingException | UnsupportedEncodingException e) {
-			            e.printStackTrace();
-			        } 
-				    
+					MimeMessage mess = javaMailSender.createMimeMessage();
+					MimeMessageHelper helper = new MimeMessageHelper(mess);  
+					try {
+						helper.setFrom(sender, senderDisplayName);
+						helper.setTo(email);
+						helper.setSubject("Your BestWork DATA User Registration has been received");
+
+						String emailText = "Welcome! You've just registered at BestWork DATA with the following information:"
+								+ "  You will need to verify your email address before you can login to your account.  This is not required to complete the questionnaire. "
+								+ "To verify your email address simply click the following link: (if you cannot click link, then copy and paste into your browser)\n" + generateLink;
+						helper.setText(emailText);
+
+						javaMailSender.send(mess);
+					} catch (MessagingException | UnsupportedEncodingException e) {
+						e.printStackTrace();
+					} 
+
 					ui.setLinkid(linkid1);
 					rdr.setUserinfo(ui);
 					rr.setData(rdr);
@@ -821,12 +821,12 @@ public class UserAuthController {
 			try {
 
 				String query1 = "select logo from landingpage where code = '" + userAccount.getCode()
-						+ "' and landingid = " + userAccount.getLandingid();
+				+ "' and landingid = " + userAccount.getLandingid();
 
 				System.out.println(query1);
 				jdbcTemplate.query(query1, new Object[] {}, rs -> {
-					   String logoFilename = rs.getString("logo");
-					    rtr.setLogo(imageFileName + logoFilename);
+					String logoFilename = rs.getString("logo");
+					rtr.setLogo(imageFileName + logoFilename);
 				});
 
 				String query2 = "select text from pages where pageid =2 ";
@@ -834,7 +834,7 @@ public class UserAuthController {
 				jdbcTemplate.query(query2, new Object[] {}, rs -> {
 					rtr.setText(rs.getString("text"));
 				});
-				
+
 				String query3 = "select companyname from company c INNER JOIN landingpage lp ON c.companyid = lp.companyid where lp.code = '" + userAccount.getCode() + "' and lp.landingid = " + userAccount.getLandingid();
 				System.out.println(query3);
 				jdbcTemplate.query(query3, new Object[] {}, rs -> {
@@ -866,6 +866,109 @@ public class UserAuthController {
 			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);
 			return entity;
 		}
+		return entity;
+	}
+
+	@PostMapping("/emailverification")
+	public ResponseEntity<StatusResponse> verification(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody Map<String, Object> requestBody) {
+
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();		
+
+		String verificationId = (String) requestBody.get("verificationId");
+		String mailId = (String) requestBody.get("mailId");
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {
+				String ver = "SELECT * FROM user_email_tbl WHERE bwd_email_id = ? AND verificationid = ?";
+
+				List<Map<String, Object>> resultList = jdbcTemplate.queryForList(ver, mailId, verificationId);
+
+				if (!resultList.isEmpty()) { 
+
+					String updateQuery1 = "UPDATE user_email_tbl SET verificationid = NULL, date_verified = NOW() WHERE bwd_email_id = ? AND verificationid = ?";
+					jdbcTemplate.update(updateQuery1, mailId, verificationId);                 
+
+					String updateQuery2 = "UPDATE user_accounts SET userlevel = -5 WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?)";
+					jdbcTemplate.update(updateQuery2, mailId);
+
+					sr.setValid(true);    
+					sr.setStatusCode(1);
+					sr.setMessage("Authenticate User Success");  
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);        
+				} else {
+					sr.setValid(false);    
+					sr.setStatusCode(3);
+					sr.setMessage("No record found");  
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);  
+				}
+			} catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
+	
+	
+	@PostMapping("/terms&conditionaccept")
+	public ResponseEntity<TermsResponse> conditionaccept(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<TermsResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		TermsResponse tr = new TermsResponse();
+		StatusResponse sr = new StatusResponse();		
+
+		String mailId = requestBody.get("mailId");
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {
+				       
+				String emailid = "select email from user_email_tbl WHERE bwd_email_id = ? ";
+				String email = jdbcTemplate.queryForObject(emailid, String.class, mailId);
+				
+					String updateQuery = "UPDATE user_accounts SET userlevel = 1 WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?)";
+					jdbcTemplate.update(updateQuery, mailId);
+
+					sr.setValid(true);    
+					sr.setStatusCode(1);
+					sr.setMessage("Authenticate User Success");  
+					
+					tr.setStatus(sr);
+					tr.setEmail(email);
+										
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);        				
+			} catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
 		return entity;
 	}
 }
