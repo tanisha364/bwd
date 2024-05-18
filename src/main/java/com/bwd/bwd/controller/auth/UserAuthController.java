@@ -53,6 +53,7 @@ import com.bwd.bwd.response.RegPageResponse;
 import com.bwd.bwd.response.RegTextResponse;
 import com.bwd.bwd.response.RegisterResponse;
 import com.bwd.bwd.response.StatusResponse;
+import com.bwd.bwd.response.TermsResponse;
 import com.bwd.bwd.response.TextResponse;
 import com.bwd.bwd.response.TokenInfo;
 import com.bwd.bwd.response.TokenResponse;
@@ -840,7 +841,14 @@ public class UserAuthController {
 				jdbcTemplate.query(query3, new Object[] {}, rs -> {
 					rtr.setCompanyname(rs.getString("companyname"));
 				});
-
+				
+				String query4 = "select text, metadescription from pages where pageid =67";
+				System.out.println(query4);
+				jdbcTemplate.query(query4, new Object[] {}, rs -> {
+					rtr.setVideo(rs.getString("text"));
+					rtr.setImage(rs.getString("metadescription"));
+				});
+				
 				rr.setRt(rtr);
 				sr.setValid(true);
 				sr.setStatusCode(1);
@@ -891,7 +899,7 @@ public class UserAuthController {
 
 				if (!resultList.isEmpty()) { 
 
-					String updateQuery1 = "UPDATE user_email_tbl SET verificationid = NULL, date_verified = NOW() WHERE bwd_email_id = ? AND verificationid = ?";
+					String updateQuery1 = "UPDATE user_email_tbl SET verificationid = NULL, date_verified = UTC_TIMESTAMP WHERE bwd_email_id = ? AND verificationid = ?";
 					jdbcTemplate.update(updateQuery1, mailId, verificationId);                 
 
 					String updateQuery2 = "UPDATE user_accounts SET userlevel = -5 WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?)";
@@ -971,4 +979,49 @@ public class UserAuthController {
 		} 
 		return entity;
 	}
+	
+	
+	@PostMapping("/crypticpasskeygen")
+	public ResponseEntity<StatusResponse> passwordgenerate(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader, @RequestBody Map<String, Object> requestBody) {
+
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();		
+
+		String password = (String) requestBody.get("password");
+		String mailId = (String) requestBody.get("mailId");
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {
+				
+				AuthServiceImpl asi = new AuthServiceImpl();				
+				String password1 = asi.getHash(password);
+				
+				String pwd = "UPDATE user_accounts SET password = ? WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?) ";
+				jdbcTemplate.update(pwd, password1, mailId);  
+				
+				sr.setValid(true);    
+				sr.setStatusCode(1);
+				sr.setMessage("Authenticate User Success");  
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.OK); 
+			}catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
+	
 }

@@ -75,7 +75,6 @@ public class UserInfoImpl implements UserInfoService
 		while(isLinkIdExisits)
 		{
 			count++;
-		//	System.out.println("No of Loop to get Linkid : "+count);
 			linkId = RandomKeyGenerator.generateRandomKey();		
 			isLinkIdExisits = dbs.findObjects(keylenght,linkId);			
 		}

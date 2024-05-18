@@ -80,6 +80,8 @@ public class CompanyController {
 		boolean validAccessToken = false;
 		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
 		
+		System.out.println(" ......................................... ----------  ???????????????????????         "+requestData.getUserid());
+		
 		if(validToken)
 		{
 			if(validAccessToken)

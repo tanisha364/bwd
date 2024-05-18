@@ -251,6 +251,9 @@ public class DBSearch {
 			case 10: 	table = "landingpage";
 			 			key = "code";
 			 			break;
+			case 30:	table = "user_email_tbl";
+ 			            key = "verificationid";
+ 			            break;		
 			default : 	table = "user_accounts";
 			 			key = "linkid";
 			 			break;			 
