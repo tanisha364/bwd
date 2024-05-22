@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bwd.bwd.db.DBOperation;
 import com.bwd.bwd.model.auth.AccountRequest;
 import com.bwd.bwd.model.auth.OauthClients;
+import com.bwd.bwd.model.auth.PasswordHistory;
 import com.bwd.bwd.model.auth.QuestionAssignmentAuth;
 import com.bwd.bwd.model.auth.UesrTokenAuth;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
@@ -35,6 +36,7 @@ import com.bwd.bwd.model.auth.UserEmailsAuth;
 import com.bwd.bwd.model.auth.UserTelsAuth;
 import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
+import com.bwd.bwd.repository.PasswordHistoryRepo;
 import com.bwd.bwd.repository.QuestionAssignmentAuthRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.repository.UserAssociationAuthRepo;
@@ -47,6 +49,7 @@ import com.bwd.bwd.response.AuthInfo;
 import com.bwd.bwd.response.AuthResponse;
 import com.bwd.bwd.response.AuthTokenResponse;
 import com.bwd.bwd.response.DataResponse;
+import com.bwd.bwd.response.EmailResponse;
 import com.bwd.bwd.response.RegDataResponse;
 import com.bwd.bwd.response.RegInfo;
 import com.bwd.bwd.response.RegPageResponse;
@@ -99,6 +102,9 @@ public class UserAuthController {
 
 	@Autowired
 	QuestionAssignmentAuthRepo qaar;
+	
+	@Autowired
+	PasswordHistoryRepo phr;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -1001,8 +1007,14 @@ public class UserAuthController {
 				AuthServiceImpl asi = new AuthServiceImpl();				
 				String password1 = asi.getHash(password);
 				
+				String uid = "SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = "+mailId;
+				int UID = jdbcTemplate.queryForObject(uid, Integer.class);
+				
 				String pwd = "UPDATE user_accounts SET password = ? WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?) ";
 				jdbcTemplate.update(pwd, password1, mailId);  
+				
+				PasswordHistory ph = new PasswordHistory();
+				phr.save(ph.createPasswordHistory(UID,password1));
 				
 				sr.setValid(true);    
 				sr.setStatusCode(1);
@@ -1024,4 +1036,88 @@ public class UserAuthController {
 		return entity;
 	}
 	
+	
+	@PostMapping("/isemailvalid")
+	public ResponseEntity<EmailResponse> isemailexist(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<EmailResponse> entity = null;
+		HttpHeaders headers = new HttpHeaders();
+
+		EmailResponse tr = new EmailResponse();
+		StatusResponse sr = new StatusResponse();		
+
+		String email = requestBody.get("email");
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {
+				String sqlCount = "SELECT COUNT(*) FROM user_email_tbl WHERE email = ?";
+	            int emailCount = jdbcTemplate.queryForObject(sqlCount, Integer.class, email);
+				
+				if(emailCount > 0)
+				{
+					
+				String sql1 = "SELECT useraccountid FROM user_email_tbl WHERE email = ? ";
+				long useraccountid = jdbcTemplate.queryForObject(sql1, Integer.class, email);
+				
+				String sql2 = "select userlevel from user_accounts WHERE useraccountid = ? ";
+				int userlevel = jdbcTemplate.queryForObject(sql2, Integer.class, useraccountid);
+				
+				String sql3 = "SELECT IFNULL((SELECT tel FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1), '0') AS tel";
+				String tel = jdbcTemplate.queryForObject(sql3, String.class, useraccountid);
+				
+				String sql = "select bwd_email_id from user_email_tbl WHERE email = ? ";
+				int mailId = jdbcTemplate.queryForObject(sql, Integer.class, email);
+									
+				
+					if(userlevel == -10 || userlevel == -5) {
+						sr.setValid(false);    
+						sr.setStatusCode(2);
+						sr.setMessage("Email not verified");  
+						
+						tr.setStatus(sr);
+						tr.setEmail(email);
+						tr.setEmailId((long) mailId);
+						entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);
+					}
+					else {
+					sr.setValid(true);    
+					sr.setStatusCode(1);
+					sr.setMessage("Authenticate User Success");  
+					
+					tr.setStatus(sr);
+					tr.setEmail(email);
+					tr.setEmailId((long) mailId);
+					tr.setPhonemumber(tel);
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
+					}
+			}
+				
+				else {
+					sr.setValid(false);    
+					sr.setStatusCode(11);
+					sr.setMessage("Email not found");  
+					
+					tr.setStatus(sr);
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.NOT_FOUND);
+				}
+				}
+			 catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
 }
