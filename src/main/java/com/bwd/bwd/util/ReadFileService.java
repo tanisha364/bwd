@@ -44,11 +44,18 @@ public class ReadFileService {
 	}
 	
 	public void readFile()
-	{
-		inputFile = pathName+"/"+fileName;		
+	{	
 		try {
-		      this.input = new FileInputStream(inputFile);
-		      this.lines = printStream(input);
+		    
+			this.input = getClass().getResourceAsStream("/" + fileName);
+	        
+			
+	        if (input != null) {
+	            this.lines = printStream(input);
+	        } else {
+	            System.err.println("Resource '" + fileName + "' not found.");
+	        }
+			
 		}catch(IOException ioe)
 		{
 			ioe.printStackTrace();

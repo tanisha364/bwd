@@ -23,7 +23,7 @@ public class PasswordHistory {
 	    private int password_history_id;
 	    
 	    @Column(name = "useraccountid")
-	    private int useraccountid;
+	    private long useraccountid;
 	     	    
 	    @Column(name = "password")	
 	    private String password;
@@ -31,7 +31,7 @@ public class PasswordHistory {
 		@Column(name = "date_set")
 		public java.sql.Timestamp date_set;
 		 
-		 public PasswordHistory createPasswordHistory(int useraccountid, String password)
+		 public PasswordHistory createPasswordHistory(long useraccountid, String password)
 			{
 				java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
 				this.useraccountid = useraccountid;

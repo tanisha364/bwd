@@ -199,7 +199,7 @@ public class CompanyController {
 						ui.setStatusdate(uaa.getStatusdate());   
 
 						List<CompanyDetailsResponse> objects = cs.findCompanyDetaist(requestData);
-
+						
 						sr.setValid(true);
 						sr.setStatusCode(1);
 						sr.setMessage("Company Details");      		    	

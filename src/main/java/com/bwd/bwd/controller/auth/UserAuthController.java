@@ -1,13 +1,12 @@
 package com.bwd.bwd.controller.auth;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bwd.bwd.db.DBOperation;
 import com.bwd.bwd.model.auth.AccountRequest;
 import com.bwd.bwd.model.auth.OauthClients;
 import com.bwd.bwd.model.auth.PasswordHistory;
@@ -1008,7 +1005,26 @@ public class UserAuthController {
 				String password1 = asi.getHash(password);
 				
 				String uid = "SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = "+mailId;
-				int UID = jdbcTemplate.queryForObject(uid, Integer.class);
+				List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(uid);	         	
+				Long UID = accountIdData.isEmpty() ? 0L : (Long) accountIdData.get(0).get("useraccountid");								
+				
+				String count = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";					
+				int emailCount = 0; 
+				try {
+				    emailCount = jdbcTemplate.queryForObject(count, Integer.class, UID);
+				} catch (EmptyResultDataAccessException e) {
+				    System.out.println("No results found for the given UID.");				   
+				    emailCount = 0; 
+				}       									
+				
+				if(emailCount > 0)
+				{
+					String pid = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";
+					int Passid = jdbcTemplate.queryForObject(pid, Integer.class, UID);
+					
+					String up = "UPDATE password_history_tbl SET archived=1 WHERE password_history_id=?";
+					jdbcTemplate.update(up, Passid); 
+				}
 				
 				String pwd = "UPDATE user_accounts SET password = ? WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?) ";
 				jdbcTemplate.update(pwd, password1, mailId);  
@@ -1069,6 +1085,9 @@ public class UserAuthController {
 				String sql3 = "SELECT IFNULL((SELECT tel FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1), '0') AS tel";
 				String tel = jdbcTemplate.queryForObject(sql3, String.class, useraccountid);
 				
+				String sql4 = "SELECT tel_code FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1";
+				int tel_code = jdbcTemplate.queryForObject(sql4, Integer.class, useraccountid);
+				
 				String sql = "select bwd_email_id from user_email_tbl WHERE email = ? ";
 				int mailId = jdbcTemplate.queryForObject(sql, Integer.class, email);
 									
@@ -1081,7 +1100,7 @@ public class UserAuthController {
 						tr.setStatus(sr);
 						tr.setEmail(email);
 						tr.setEmailId((long) mailId);
-						entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);
+						entity = new ResponseEntity<>(tr, headers, HttpStatus.FORBIDDEN);
 					}
 					else {
 					sr.setValid(true);    
@@ -1091,7 +1110,8 @@ public class UserAuthController {
 					tr.setStatus(sr);
 					tr.setEmail(email);
 					tr.setEmailId((long) mailId);
-					tr.setPhonemumber(tel);
+					tr.setPhonenumber(tel);
+					tr.setTel_code(tel_code);
 					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
 					}
 			}
@@ -1112,6 +1132,33 @@ public class UserAuthController {
 				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
 				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
 			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
+	
+	
+	@PostMapping("/mailverifylinkgenerate")
+	public ResponseEntity<EmailResponse> mailverifylinkgenerate(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<EmailResponse> entity = null;
+		HttpHeaders headers = new HttpHeaders();
+
+		EmailResponse tr = new EmailResponse();
+		StatusResponse sr = new StatusResponse();		
+
+		String mailId = requestBody.get("mailId");
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			
 		} else {
 			sr.setValid(false);
 			sr.setStatusCode(20);
