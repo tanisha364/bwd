@@ -1,6 +1,7 @@
 package com.bwd.bwd.controller.auth;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -1000,38 +1002,54 @@ public class UserAuthController {
 
 		if (validToken) {
 			try {
-				
+
 				AuthServiceImpl asi = new AuthServiceImpl();				
 				String password1 = asi.getHash(password);
-				
+
 				String uid = "SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = "+mailId;
 				List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(uid);	         	
 				Long UID = accountIdData.isEmpty() ? 0L : (Long) accountIdData.get(0).get("useraccountid");								
-				
+
 				String count = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";					
 				int emailCount = 0; 
 				try {
-				    emailCount = jdbcTemplate.queryForObject(count, Integer.class, UID);
-				} catch (EmptyResultDataAccessException e) {
-				    System.out.println("No results found for the given UID.");				   
-				    emailCount = 0; 
+					emailCount = jdbcTemplate.queryForObject(count, Integer.class, UID);
+				} catch (EmptyResultDataAccessException e) {	   
+					emailCount = 0; 
 				}       									
-				
+
 				if(emailCount > 0)
 				{
+					String last = "select password_history_id FROM password_history_tbl WHERE useraccountid=? AND last_3 = 1";
+					List<Integer> passwordHistoryIds = jdbcTemplate.queryForList(last, Integer.class, UID);
+					if (passwordHistoryIds.size() >= 3) {
+						int smallestPasswordHistoryId = Collections.min(passwordHistoryIds);
+
+						String up = "update password_history_tbl set last_3 = 0 where password_history_id = ? ";
+						jdbcTemplate.update(up, smallestPasswordHistoryId);													
+					}
+
+					boolean passwordMatchesLastThree = comparePasswordWithLastThree(password, UID);					 					 
+					if (passwordMatchesLastThree) {
+						sr.setValid(false);
+						sr.setStatusCode(11);
+						sr.setMessage("Password matches one of the last three used passwords.");
+						return new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);
+					}
+
 					String pid = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";
 					int Passid = jdbcTemplate.queryForObject(pid, Integer.class, UID);
-					
+
 					String up = "UPDATE password_history_tbl SET archived=1 WHERE password_history_id=?";
 					jdbcTemplate.update(up, Passid); 
 				}
-				
+
 				String pwd = "UPDATE user_accounts SET password = ? WHERE useraccountid = (SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = ?) ";
 				jdbcTemplate.update(pwd, password1, mailId);  
-				
+
 				PasswordHistory ph = new PasswordHistory();
 				phr.save(ph.createPasswordHistory(UID,password1));
-				
+
 				sr.setValid(true);    
 				sr.setStatusCode(1);
 				sr.setMessage("Authenticate User Success");  
@@ -1051,6 +1069,31 @@ public class UserAuthController {
 		} 
 		return entity;
 	}
+
+
+	public boolean comparePassword(String textPassword,String dbPassword)
+	{
+		boolean passChecker = false;
+		BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
+		passChecker = bc.matches(textPassword,dbPassword);
+
+		return passChecker;
+	}
+
+	@SuppressWarnings("deprecation")
+	public boolean comparePasswordWithLastThree(String textPassword, Long UID) {
+		String query = "SELECT ph.password FROM password_history_tbl ph WHERE ph.useraccountid = ? ORDER BY ph.date_set DESC LIMIT 3";
+		List<String> lastThreePasswords = jdbcTemplate.queryForList(query, new Object[]{UID}, String.class);
+		for (String dbPassword : lastThreePasswords) {
+			if (comparePassword(textPassword, dbPassword)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	
 	
 	
 	@PostMapping("/isemailvalid")
