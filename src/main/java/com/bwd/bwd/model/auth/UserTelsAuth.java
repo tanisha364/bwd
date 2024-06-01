@@ -55,6 +55,7 @@ public class UserTelsAuth {
 		this.tel = tel;
 		this.telCode = telCode;
 		this.date_added = (java.sql.Timestamp)dt;
+		this.date_verified = (java.sql.Timestamp)dt;
 		return this;
 	}
 }

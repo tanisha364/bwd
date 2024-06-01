@@ -28,6 +28,7 @@ import com.bwd.bwd.model.auth.AccountRequest;
 import com.bwd.bwd.model.auth.OauthClients;
 import com.bwd.bwd.model.auth.PasswordHistory;
 import com.bwd.bwd.model.auth.QuestionAssignmentAuth;
+import com.bwd.bwd.model.auth.RegistrationActivity;
 import com.bwd.bwd.model.auth.UesrTokenAuth;
 import com.bwd.bwd.model.auth.UserAccountsAuth;
 import com.bwd.bwd.model.auth.UserAssociationAuth;
@@ -37,6 +38,7 @@ import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
 import com.bwd.bwd.repository.PasswordHistoryRepo;
 import com.bwd.bwd.repository.QuestionAssignmentAuthRepo;
+import com.bwd.bwd.repository.RegistrationActivityRepo;
 import com.bwd.bwd.repository.UserAccountsAuthRepo;
 import com.bwd.bwd.repository.UserAssociationAuthRepo;
 import com.bwd.bwd.repository.UserEmailAuthRepo;
@@ -101,6 +103,9 @@ public class UserAuthController {
 
 	@Autowired
 	QuestionAssignmentAuthRepo qaar;
+	
+	@Autowired
+	RegistrationActivityRepo rap;
 	
 	@Autowired
 	PasswordHistoryRepo phr;
@@ -667,8 +672,6 @@ public class UserAuthController {
 		RegisterResponse rr = new RegisterResponse();
 		StatusResponse sr = new StatusResponse();
 
-		// UserAccountsAuth uaa = new UserAccountsAuth();
-
 		RegInfo ui = new RegInfo();
 		RegDataResponse rdr = new RegDataResponse();
 		boolean validToken = false;
@@ -677,17 +680,45 @@ public class UserAuthController {
 
 		if (validToken) {
 			try {
-				String emailCheckSql = "SELECT COUNT(*) FROM user_email_tbl WHERE email = '" + userAccount.getEmail()
-				+ "'";
-				int emailCount = jdbcTemplate.queryForObject(emailCheckSql, Integer.class);
+				
+				String emailQuery = "SELECT useraccountid FROM user_email_tbl WHERE email = ? LIMIT 1";								
+				List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(emailQuery, userAccount.getEmail());
+				long Euid = 0;
+				if (!userAccountIdData.isEmpty()) {
+				    Euid = (long) userAccountIdData.get(0).get("useraccountid");
+				}
+				System.out.println(Euid);
 
-				if (emailCount > 0) {
-					sr.setValid(false);
-					sr.setStatusCode(10);
-					sr.setMessage("Email already exists");
-					rr.setStatus(sr);
-					return new ResponseEntity<>(rr, headers, HttpStatus.BAD_REQUEST);
-				} else {
+				String telQuery = "SELECT useraccountid FROM user_tel_tbl WHERE tel = ? LIMIT 1";								
+				List<Map<String, Object>> userTelData = jdbcTemplate.queryForList(telQuery, userAccount.getTel());
+				long Tuid = 0;
+				if (!userTelData.isEmpty()) {
+				    Tuid = (long) userTelData.get(0).get("useraccountid");
+				}
+				System.out.println(Tuid);	
+					
+				if(Euid == Tuid && Euid != 0) {
+					
+					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");			
+					  String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?" ;
+					  String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
+					  
+					    ui.setLinkid(Link);
+						rdr.setUserinfo(ui);
+						rr.setData(rdr);
+
+						message = "User already registerd";
+
+						sr.setValid(true);
+						sr.setStatusCode(11);
+						sr.setMessage(message);
+
+						rr.setStatus(sr);
+						entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+				}
+				
+				else {
+			
 					String linkid1 = UserInfoImpl.generateUniqueLinkId();					
 
 					String verificationid = UserInfoImpl.generateUniqueLinkId(30);
@@ -712,11 +743,6 @@ public class UserAuthController {
 					uaar.save(uaa);
 					Long useraccountid = uaa.getUseraccountid();
 					String regnum = mark + useraccountid;
-
-					//AuthServiceImpl asi = new AuthServiceImpl();
-
-					//String password1 = asi.getHash(userAccount.getPassword());
-					//userAccount.setPassword(password1);
 
 					uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
 
@@ -751,6 +777,10 @@ public class UserAuthController {
 						QuestionAssignmentAuth qaa = new QuestionAssignmentAuth();
 						qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
 					}
+					
+					RegistrationActivity ra = new RegistrationActivity();
+					rap.save(ra.registrationActivity(id, companyid, comptokenid, jobid, userAccount.getUseragent(), userAccount.getIp()));
+					
 
 					String generateLink =linkurl+verificationid+bwdEmailId+"-"+useraccountid ;
 
@@ -785,7 +815,8 @@ public class UserAuthController {
 					rr.setStatus(sr);
 					entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
 				}
-			} catch (Exception ex) {
+			}
+			 catch (Exception ex) {
 				ex.printStackTrace();
 				System.out.println(ex.getMessage());
 				sr.setValid(false);
@@ -1127,9 +1158,19 @@ public class UserAuthController {
 				
 				String sql3 = "SELECT IFNULL((SELECT tel FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1), '0') AS tel";
 				String tel = jdbcTemplate.queryForObject(sql3, String.class, useraccountid);
+
+				if (tel == null || tel.equals("0")) {
+                	tel = "";
+                }
 				
-				String sql4 = "SELECT tel_code FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1";
-				int tel_code = jdbcTemplate.queryForObject(sql4, Integer.class, useraccountid);
+				String sql4 = "SELECT tel_code FROM user_tel_tbl WHERE useraccountid = ? LIMIT 1";				
+				
+				int tel_code = 0; 
+				try {
+					tel_code = jdbcTemplate.queryForObject(sql4, Integer.class, useraccountid);
+				} catch (EmptyResultDataAccessException e) {	   
+					tel_code = 0; 
+				}  
 				
 				String sql = "select bwd_email_id from user_email_tbl WHERE email = ? ";
 				int mailId = jdbcTemplate.queryForObject(sql, Integer.class, email);

@@ -21,4 +21,6 @@ public class AccountRequest {
 	private int telCode;
 	private int isvet;
 	private int participanttype;
+	private String useragent;
+	private String ip;
 }
