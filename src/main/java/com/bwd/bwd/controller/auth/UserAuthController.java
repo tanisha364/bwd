@@ -716,6 +716,67 @@ public class UserAuthController {
 						rr.setStatus(sr);
 						entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
 				}
+			
+				else if (Tuid == 0 && Euid != 0) {
+					
+					System.out.println("???????????????????????????????");			
+				    String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
+				    String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
+
+				    ui.setLinkid(Link);
+				    rdr.setUserinfo(ui);
+				    rr.setData(rdr);
+
+				    message = "Please verify to add Phone number";
+
+				    sr.setValid(true);
+				    sr.setStatusCode(12);
+				    sr.setMessage(message);
+
+				    rr.setStatus(sr);
+				    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+				}
+				
+				else if (Euid != Tuid && Euid != 0) {
+					
+					System.out.println(")))))))))))))))))))))))))))");			
+					 String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
+					    String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
+
+					    ui.setLinkid(Link);
+					    rdr.setUserinfo(ui);
+					    rr.setData(rdr);
+
+					    message = "Email and Phone number are registered with different account";
+
+					    sr.setValid(true);
+					    sr.setStatusCode(13);
+					    sr.setMessage(message);
+
+					    rr.setStatus(sr);
+					    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+				}
+				
+				else if (Euid == 0 && Tuid != 0) {
+					
+					System.out.println("++++++++++++++++++++++++++++++s");			
+					
+					 String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
+					    String Link = jdbcTemplate.queryForObject(link, String.class, Tuid);
+
+					    ui.setLinkid(Link);
+					    rdr.setUserinfo(ui);
+					    rr.setData(rdr);
+
+					    message = "Phone number are registered with different account";
+
+					    sr.setValid(true);
+					    sr.setStatusCode(14);
+					    sr.setMessage(message);
+
+					    rr.setStatus(sr);
+					    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+				}
 				
 				else {
 			
