@@ -1,6 +1,8 @@
 package com.bwd.bwd.controller.auth;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ import com.bwd.bwd.repository.UserTelAuthRepo;
 import com.bwd.bwd.repository.UserTokenAuthRepo;
 import com.bwd.bwd.request.LoginData;
 import com.bwd.bwd.request.TokenInfoReq;
+import com.bwd.bwd.response.AssignmentResponse;
 import com.bwd.bwd.response.AuthInfo;
 import com.bwd.bwd.response.AuthResponse;
 import com.bwd.bwd.response.AuthTokenResponse;
@@ -1312,4 +1315,107 @@ public class UserAuthController {
 		} 
 		return entity;
 	}
+	
+	@PostMapping("/assignmentcheck")
+	public ResponseEntity<AssignmentResponse> assignmentcheck(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<AssignmentResponse> entity = null;
+		HttpHeaders headers = new HttpHeaders();
+
+		AssignmentResponse tr = new AssignmentResponse();
+		StatusResponse sr = new StatusResponse();		
+
+		String linkid = requestBody.get("linkid");
+		String landingid = requestBody.get("landingid");
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {
+				
+				
+				String sql = "SELECT useraccountid FROM user_accounts WHERE linkid = '" + linkid + "'";
+				List<Map<String, Object>> ua = jdbcTemplate.queryForList(sql);	         	
+				Long UID = ua.isEmpty() ? 0L : (Long) ua.get(0).get("useraccountid");								
+				int convertedId = UID.intValue();
+				
+				String sql1 = "select test_id from questionnaire_assignment where useraccountid = " +convertedId;
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql1);
+				List<Integer> testIds = new ArrayList<>();
+				for (Map<String, Object> row : rows) {
+				    Integer testId = (Integer) row.get("test_id");
+				    testIds.add(testId);
+				}
+					
+				
+				String sql2 = "select landingassessmentid from landingpage WHERE landingid =  ?";
+				int lan = jdbcTemplate.queryForObject(sql2, Integer.class, landingid);			
+								
+				
+				String sql3 = "select test_id from landing_questionnaire_tbl where landing_assessment_id = " +lan + " and add_after_existing = 1 ";
+                List<Map<String, Object>> check = jdbcTemplate.queryForList(sql3);
+				List<Integer> testids = new ArrayList<>();
+				for (Map<String, Object> row : check) {
+				    Integer testId = (Integer) row.get("test_id");
+				    testids.add(testId);
+				}
+				
+				
+				String sql4 = "select companyid from landingpage WHERE landingid =  ?";
+				int companyid = jdbcTemplate.queryForObject(sql4, Integer.class, landingid);	
+				
+				
+				Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+				int sequence = testIds.size() + 1;
+				
+				String insertSql = "INSERT INTO questionnaire_assignment (useraccountid, assigned_by, date_assigned, test_id, sequence) VALUES (?, ?, ?, ?, ? )";
+				for (Integer testId : testids) {
+				    if (!testIds.contains(testId)) {
+				        jdbcTemplate.update(insertSql, convertedId, companyid, currentTimestamp, testId, sequence);
+				    }
+				}
+				
+				
+				String ver = "SELECT * FROM questionnaire_assignment WHERE useraccountid = ? AND archive = 0";
+				List<Map<String, Object>> resultList = jdbcTemplate.queryForList(ver, convertedId);
+
+				if (!resultList.isEmpty()) {
+					sr.setValid(true);    
+					sr.setStatusCode(1);
+					sr.setMessage("Complete all assignments");  
+					
+					tr.setStatus(sr);
+					tr.setPending(true);
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
+				}
+				else {
+					sr.setValid(true);    
+					sr.setStatusCode(2);
+					sr.setMessage("No assignments");  
+					
+					tr.setStatus(sr);
+					tr.setPending(false);
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
+				}
+									
+			}
+			
+			 catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
+
 }
