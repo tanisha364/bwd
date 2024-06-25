@@ -669,7 +669,7 @@ public class UserAuthController {
 			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
 			@RequestBody AccountRequest userAccount) {
 		String message = "";
-		ResponseEntity<RegisterResponse> entity;
+		ResponseEntity<RegisterResponse> entity = null;
 		HttpHeaders headers = new HttpHeaders();
 
 		RegisterResponse rr = new RegisterResponse();
@@ -705,39 +705,46 @@ public class UserAuthController {
 					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");			
 					  String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?" ;
 					  String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
-					  
-					    ui.setLinkid(Link);
-						rdr.setUserinfo(ui);
-						rr.setData(rdr);
+					  boolean saveResult = save(Euid, userAccount.getLandingid(), userAccount.getUseragent(), userAccount.getIp(), userAccount.getEmail(), userAccount.getParticipanttype());
 
-						message = "User already registerd";
+		                if (saveResult) {
+		                    ui.setLinkid(Link);
+		                    rdr.setUserinfo(ui);
+		                    rr.setData(rdr);
 
-						sr.setValid(true);
-						sr.setStatusCode(11);
-						sr.setMessage(message);
+		                    message = "User already registered";
 
-						rr.setStatus(sr);
-						entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+		                    sr.setValid(true);
+		                    sr.setStatusCode(11);
+		                    sr.setMessage(message);
+
+		                    rr.setStatus(sr);
+		                    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+		                }
 				}
 			
-				else if (Tuid == 0 && Euid != 0) {
+               else if (Tuid == 0 && Euid != 0) {
 					
 					System.out.println("???????????????????????????????");			
 				    String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
 				    String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
 
-				    ui.setLinkid(Link);
-				    rdr.setUserinfo(ui);
-				    rr.setData(rdr);
+				    boolean saveResult = save(Euid, userAccount.getLandingid(), userAccount.getUseragent(), userAccount.getIp(), userAccount.getEmail(), userAccount.getParticipanttype());
 
-				    message = "Please verify to add Phone number";
+	                if (saveResult) {
+	                    ui.setLinkid(Link);
+	                    rdr.setUserinfo(ui);
+	                    rr.setData(rdr);
 
-				    sr.setValid(true);
-				    sr.setStatusCode(12);
-				    sr.setMessage(message);
+	                    message = "Please verify to add Phone number";
 
-				    rr.setStatus(sr);
-				    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+	                    sr.setValid(true);
+	                    sr.setStatusCode(12);
+	                    sr.setMessage(message);
+
+	                    rr.setStatus(sr);
+	                    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+	                }
 				}
 				
 				else if (Euid != Tuid && Euid != 0) {
@@ -746,18 +753,22 @@ public class UserAuthController {
 					 String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
 					    String Link = jdbcTemplate.queryForObject(link, String.class, Euid);
 
-					    ui.setLinkid(Link);
-					    rdr.setUserinfo(ui);
-					    rr.setData(rdr);
+					    boolean saveResult = save(Euid, userAccount.getLandingid(), userAccount.getUseragent(), userAccount.getIp(), userAccount.getEmail(), userAccount.getParticipanttype());
 
-					    message = "Email and Phone number are registered with different account";
+		                if (saveResult) {
+		                    ui.setLinkid(Link);
+		                    rdr.setUserinfo(ui);
+		                    rr.setData(rdr);
 
-					    sr.setValid(true);
-					    sr.setStatusCode(13);
-					    sr.setMessage(message);
+		                    message = "Email and Phone number are registered with different account";
 
-					    rr.setStatus(sr);
-					    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+		                    sr.setValid(true);
+		                    sr.setStatusCode(13);
+		                    sr.setMessage(message);
+
+		                    rr.setStatus(sr);
+		                    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+		                }
 				}
 				
 				else if (Euid == 0 && Tuid != 0) {
@@ -767,19 +778,23 @@ public class UserAuthController {
 					 String link = "SELECT linkid FROM user_accounts WHERE useraccountid = ?";
 					    String Link = jdbcTemplate.queryForObject(link, String.class, Tuid);
 
-					    ui.setLinkid(Link);
-					    rdr.setUserinfo(ui);
-					    rr.setData(rdr);
+					    boolean saveResult = save(Euid, userAccount.getLandingid(), userAccount.getUseragent(), userAccount.getIp(), userAccount.getEmail(), userAccount.getParticipanttype());
 
-					    message = "Phone number are registered with different account";
+		                if (saveResult) {
+		                    ui.setLinkid(Link);
+		                    rdr.setUserinfo(ui);
+		                    rr.setData(rdr);
 
-					    sr.setValid(true);
-					    sr.setStatusCode(14);
-					    sr.setMessage(message);
+		                    message =  "Phone number are registered with different account";
 
-					    rr.setStatus(sr);
-					    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
-				}
+		                    sr.setValid(true);
+		                    sr.setStatusCode(14);
+		                    sr.setMessage(message);
+
+		                    rr.setStatus(sr);
+		                    entity = new ResponseEntity<>(rr, headers, HttpStatus.OK);
+		                }
+				}				
 				
 				else {
 			
@@ -899,6 +914,58 @@ public class UserAuthController {
 
 		return entity;
 	}
+	
+	
+	public boolean save(Long Euid, int landingid, String useragent, String ip, String email, int participanttype) {
+	    int convertedId = Euid.intValue();
+	    
+	    // Query for companyid and comptoken from landingpage
+	    String sql1 = "SELECT companyid FROM landingpage WHERE landingid = ?";
+	    int companyIdFromLandingPage = jdbcTemplate.queryForObject(sql1, Integer.class, landingid);
+	    
+	    String sql2 = "SELECT comptoken FROM landingpage WHERE landingid = ?";
+	    int landingPageCompToken = jdbcTemplate.queryForObject(sql2, Integer.class, landingid);
+	    
+	    // Query for companyid and tokenid from user_association
+	    String sql3 = "SELECT companyid FROM user_association WHERE useraccountid = ?";
+	    List<Integer> userAssociationCompanyIds = jdbcTemplate.queryForList(sql3, Integer.class, Euid);
+	    
+	    String sql4 = "SELECT tokenid FROM user_association WHERE useraccountid = ?";
+	    List<Integer> userAssociationTokenIds = jdbcTemplate.queryForList(sql4, Integer.class, Euid);
+	    
+	    // Query for comptoken from user_token
+	    String sql5 = "SELECT comptoken FROM user_token WHERE useraccountid = ?";
+	    List<Integer> userTokenCompTokens = jdbcTemplate.queryForList(sql5, Integer.class, Euid);
+	    
+	    String sql6 ="SELECT jobid FROM job_tbl j INNER JOIN department_tbl dep ON j.departmentid = dep.departmentid WHERE companyid= "+companyIdFromLandingPage +" AND dep.subof = -1 LIMIT 1";
+		int jobid = jdbcTemplate.queryForObject(sql6, Integer.class);
+	    
+	    RegistrationActivity ra = new RegistrationActivity();
+	    UesrTokenAuth utoa = new UesrTokenAuth();
+	    UserAssociationAuth uaca = new UserAssociationAuth();
+	    
+	    boolean isTokenValid = userAssociationTokenIds.contains(landingPageCompToken) || userTokenCompTokens.contains(landingPageCompToken);
+	    
+	    if (userAssociationCompanyIds.contains(companyIdFromLandingPage)) {
+	        if (isTokenValid) {
+	        	System.out.println("///////////////////////////");
+	            rap.save(ra.registrationActivity(Euid, companyIdFromLandingPage, landingPageCompToken, jobid, useragent, ip));
+	        }else {
+	        	System.out.println("......................");
+	        	rap.save(ra.registrationActivity(Euid, companyIdFromLandingPage, landingPageCompToken, jobid, useragent, ip));
+	            utor.save(utoa.createToken(convertedId, companyIdFromLandingPage, landingPageCompToken));
+	        }
+	       
+	    } else {
+	    	System.out.println("?????????????????????????");
+	        uacar.save(uaca.createAssociation(convertedId, landingPageCompToken, companyIdFromLandingPage, jobid, email, participanttype));
+	        utor.save(utoa.createToken(convertedId, companyIdFromLandingPage, landingPageCompToken));
+	        rap.save(ra.registrationActivity(Euid, companyIdFromLandingPage, landingPageCompToken, jobid, useragent, ip));
+	    }
+	    
+	    return true;
+	}
+	
 
 	@SuppressWarnings("deprecation")
 	@PostMapping("/landingpage")
@@ -1316,6 +1383,7 @@ public class UserAuthController {
 		return entity;
 	}
 	
+	
 	@PostMapping("/assignmentcheck")
 	public ResponseEntity<AssignmentResponse> assignmentcheck(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
 
@@ -1418,4 +1486,77 @@ public class UserAuthController {
 		return entity;
 	}
 
+	
+	@PostMapping("/numberadd")
+	public ResponseEntity<EmailResponse> numberadd(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<EmailResponse> entity = null;
+		HttpHeaders headers = new HttpHeaders();
+
+		EmailResponse tr = new EmailResponse();
+		StatusResponse sr = new StatusResponse();		
+
+		String mailId = requestBody.get("mailId");
+		String phn = requestBody.get("tel");
+		String telCodeString = (String) requestBody.get("telCode");
+		int telCode = Integer.parseInt(telCodeString);
+
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		if (validToken) {
+			try {						
+			
+				String sql1 = "SELECT useraccountid FROM user_email_tbl WHERE email = ? ";
+				long UID = jdbcTemplate.queryForObject(sql1, Integer.class, mailId);
+				
+				String count = "SELECT count(tel) FROM user_tel_tbl WHERE tel=? and archived =0";				
+				int emailCount = 0; 
+				try {
+					emailCount = jdbcTemplate.queryForObject(count, Integer.class, phn);
+				} catch (EmptyResultDataAccessException e) {	   
+					emailCount = 0; 
+				}  
+				
+				System.out.println("emailCount" + emailCount);
+				
+				if(emailCount > 0)
+				{
+				
+					String updateQuery = "UPDATE user_tel_tbl SET archived = 1 WHERE tel = "+ phn;		
+					System.out.println(updateQuery);
+					jdbcTemplate.update(updateQuery);
+					
+				}
+					
+					Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+					
+					String insert = "INSERT into user_tel_tbl(useraccountid, tel, tel_code, date_verified, date_added) VALUES (?, ?, ?, ?, ? ) ";
+					jdbcTemplate.update(insert, UID, phn, telCode, currentTimestamp, currentTimestamp);
+
+					sr.setValid(true);    
+					sr.setStatusCode(1);
+					sr.setMessage("Authenticate User Success");  
+					
+					tr.setStatus(sr);
+					tr.setEmail(mailId);
+					tr.setPhonenumber(phn);
+										
+					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);        				
+			} catch(NullPointerException npex) {
+
+				sr.setValid(false);
+				sr.setStatusCode(0);
+				sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");   		        
+				entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+			}
+		} else {
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");
+			entity = new ResponseEntity<>(tr, headers, HttpStatus.UNAUTHORIZED);    
+		} 
+		return entity;
+	}
 }
