@@ -47,12 +47,12 @@ public class QuestionAssignmentAuth {
 		}
 
 		
-		public QuestionAssignmentAuth createAss(int useraccountid, int assigned_by, int squence, int test_id, int archived)
+		public QuestionAssignmentAuth createAss(int useraccountid, int assigned_by, int sequence, int test_id, int archived)
 		{
 			java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
 			this.useraccountid = useraccountid;
 			this.assigned_by = assigned_by;
-			this.sequence = squence;
+			this.sequence = sequence;
 			this.test_id = test_id;
 			this.archived = archived;
 

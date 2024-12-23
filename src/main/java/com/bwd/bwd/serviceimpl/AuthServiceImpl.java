@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthServices {
 			ai.setUseraccountid(uea.getUseraccountid());
 			sr.setStatusCode(2);		
 			
-			uaa = uaar.getReferenceById(uea.getUseraccountid()); 
+			uaa = uaar.getReferenceByUseraccountid(uea.getUseraccountid()); 
 			
 			ar = as.checkUser(uaa,ar);		
 			
@@ -102,7 +102,7 @@ public class AuthServiceImpl implements AuthServices {
 	@Override
 	public AuthResponse checkUser(UserAccountsAuth uaa,AuthResponse ar)
 	{
-		long useraccountid = -1;
+		int useraccountid = 0;
 		AuthInfo ai = new AuthInfo();
 		StatusResponse sr = new StatusResponse();
 		DataResponse dr = new DataResponse();

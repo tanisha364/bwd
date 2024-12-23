@@ -81,11 +81,8 @@ public class DBOperation {
 	
 	public String getTitle(String str)
 	{
-		String title;
 		char ch;
 		char ch1;
-		int ln;
-		
 		StringBuilder sb = new StringBuilder(str);
 		for(int i=0;i<sb.length();i++)
 		{
@@ -100,7 +97,6 @@ public class DBOperation {
 		if(sb.charAt(0)>=97 && sb.charAt(0)<=122)
 		{
 			ch1 = (char) (sb.charAt(0)-32);
-			String ch2 = ""+ch1;
 			sb.setCharAt(0,ch1);
 		}
 	
@@ -185,7 +181,7 @@ public class DBOperation {
 		try
 		{
 			stmt=con.createStatement();
-			int countInserted = stmt.executeUpdate(sqlInsert);
+			stmt.executeUpdate(sqlInsert);
 		} catch(SQLException ex) {
 	         ex.printStackTrace();
 	      }
@@ -211,8 +207,7 @@ public class DBOperation {
 		try
 		{
 			stmt=con.createStatement();
-//			System.out.println(sqlDelete);
-			int countInserted = stmt.executeUpdate(sqlDelete);
+stmt.executeUpdate(sqlDelete);
 		} catch(SQLException ex) {
 	         ex.printStackTrace();
 	      }

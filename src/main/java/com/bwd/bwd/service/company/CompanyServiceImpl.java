@@ -26,14 +26,12 @@ public class CompanyServiceImpl implements CompanyServices{
 	{
 		DBOperation dbop = new DBOperation();
 		List<CompanyListResponse> listJPR = new ArrayList<CompanyListResponse>();
-		//long useraccountid = requestData.getUseraccountid();
-		//List<CompanyResponse> objects = null;
-
-		//objects  = new ArrayList<CompanyResponse>();
 		
 		String accountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
-		List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, requestData.getUserid());	         	
-		Long profileAccountId = (Long) accountIdData.get(0).get("useraccountid");
+		//List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, requestData.getUserid());	         	
+		//Long profileAccountId = (Long) accountIdData.get(0).get("useraccountid");
+		
+		int profileAccountId = jdbcTemplate.queryForObject(accountIdQuery, Integer.class, requestData.getUserid());
 
 		String accessLevelQuery = "SELECT userlevel FROM user_accounts WHERE useraccountid = "+profileAccountId;
 

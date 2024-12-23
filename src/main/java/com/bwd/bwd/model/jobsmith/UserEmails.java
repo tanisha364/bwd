@@ -28,10 +28,10 @@ public class UserEmails implements UserDetails
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "bwd_email_id")	
-	private Long bwd_email_id;
+	private int bwd_email_id;
 	
 	@Column(name = "useraccountid")
-	private Long useraccountid;
+	private int useraccountid;
 	
 	@Column(name = "email")
 	private String email;

@@ -242,8 +242,8 @@ public class DBSearch {
 		
 		switch(keylenght)
 		{
-			case 20: 	table = "user_accounts";
-					 	key = "linkid";
+			case 20: 	table = "invitation_tbl";
+					 	key = "inviteed_by";
 					 	break;
 			case 15: 	table = "company";
 			 			key = "integrate";

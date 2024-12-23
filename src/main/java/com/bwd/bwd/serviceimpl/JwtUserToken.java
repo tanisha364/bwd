@@ -13,13 +13,15 @@ import com.bwd.bwd.model.jobsmith.UserEmails;
 import com.bwd.bwd.repository.OauthClientsRepo;
 import com.bwd.bwd.request.TokenInfoReq;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 
 @Service
-public class JwtUserToken {	
+public class JwtUserToken {    
 	
 	private String tokenType = "Bearer";
 	@Autowired
@@ -27,7 +29,7 @@ public class JwtUserToken {
 
 //	private static final long serialVersionUID = -2550185165626007488L;
 
-	public static final long JWT_TOKEN_VALIDITY =  30 * 60  ;
+	public static final long JWT_TOKEN_VALIDITY =  30 * 60 * 60 ;
 	public static final long JWT_REFRESH_TOKEN_VALIDITY = 30  * 60 * 60 * 5;
 
 //	@Value("${jwt.secret}")
@@ -106,48 +108,54 @@ public class JwtUserToken {
     }
     
     public UserEmails getUserEmailClaims(String token) {
-    	UserEmails userEmails = new UserEmails();
-    	Long uaid;
-    	 
-    	final Claims claims = getAllClaimsFromToken(token);
-    	
-    	userEmails.setEmail(claims.getSubject());
-    	uaid = Long.parseLong(claims.get("useraccountid").toString());
-    	userEmails.setUseraccountid(uaid);
+        UserEmails userEmails = new UserEmails();
+        int uaid;
+
+        final Claims claims = getAllClaimsFromToken(token);
+     
+        userEmails.setEmail(claims.getSubject());
+
+        uaid = Integer.parseInt(claims.get("useraccountid").toString());
+
+        userEmails.setUseraccountid(uaid);
         
-    	return userEmails;
+        return userEmails;
     }
     
-    public boolean isValidAccessToken(String token)
-    {
-    	boolean isValid;
-    	try
-    	{
-        	final Claims claims = getAllClaimsFromToken(token);
-        	long curentTime = System.currentTimeMillis();
-        	Date curentDate = new Date(curentTime); //getClaimFromToken(token, Claims::getExpiration);
-        	if(curentDate.before(claims.getExpiration())){
-        		isValid = true;
-        	}
-        	else
-        	{
-        		isValid = false;
-        	}   		
-    	}catch(io.jsonwebtoken.ExpiredJwtException ejex) {
-    		isValid = false;
-		}catch(Exception ejex) {
-			isValid = false;
-		}    	
-    	return isValid;
-    }
-	
+	/*
+	 * public boolean isValidAccessToken(String token) { System.out.println(token);
+	 * 
+	 * boolean isValid; try { final Claims claims = getAllClaimsFromToken(token);
+	 * long currentTime = System.currentTimeMillis(); Date currentDate = new
+	 * Date(currentTime);
+	 * 
+	 * if (currentDate.before(claims.getExpiration())) { isValid = true; } else {
+	 * isValid = false; } } catch (io.jsonwebtoken.ExpiredJwtException ejex) {
+	 * isValid = false; } catch (Exception ex) { ex.printStackTrace(); isValid =
+	 * false; }
+	 * 
+	 * return isValid; }
+	 */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 	public static void main(String [] args)
 	{
 		JwtUserToken jut = new JwtUserToken();
 		UserEmails userEmails = new UserEmails();
 		UserDetails userDetails = new UserEmails();
 		
-		userEmails.setUseraccountid(211804l);
+		userEmails.setUseraccountid(211804);
 		userEmails.setEmail("rajesha@gmail.com");
 		
 		userDetails = userEmails;

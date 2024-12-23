@@ -131,9 +131,7 @@ public class JobsmithController {
 
 		List<Category> list = null;
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		if(validToken)
 		{	
@@ -226,9 +224,7 @@ public class JobsmithController {
 
 
 		List<JobsmithCapabilities> list = null;
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		if(validToken)
 		{
@@ -236,7 +232,7 @@ public class JobsmithController {
 			{		
 				try {
 					uaa = uaar.getReferenceByUserid(data.getUserid());
-					System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+data.getUserid());
+					
 					ui.setFirstname(uaa.getFirstname());
 					ui.setLastname(uaa.getLastname());
 					ui.setStatus(uaa.getStatus());
@@ -364,9 +360,7 @@ public class JobsmithController {
 		List<ReportInfo> listR = null;
 
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		if(validToken)
 		{
@@ -509,9 +503,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		int companyid = data.getCompanyid()	;
 		
@@ -530,8 +522,8 @@ public class JobsmithController {
 					
 					String accountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 					List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
-					Long useraccountId = (Long) accountIdData.get(0).get("useraccountid");
-					int useraccountIdInt = useraccountId.intValue();
+					int useraccountIdInt = (int) accountIdData.get(0).get("useraccountid");
+					//int useraccountIdInt = useraccountId.intValue();
 					
 					data.setUseraccountid(useraccountIdInt);
 					
@@ -573,7 +565,7 @@ public class JobsmithController {
 							int id = jr.getJobsmith_reportid();
 
 							ArrayList<Critical> ar = data.getCritical();		
-							Iterator itr = ar.iterator();
+							Iterator<Critical> itr = ar.iterator();
 							System.out.println("Size of Critical : "+ar.size());
 							while (itr.hasNext())
 							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
@@ -583,7 +575,7 @@ public class JobsmithController {
 							}
 
 							ArrayList<Important> ari = data.getImportant();		
-							Iterator itri = ari.iterator();
+							Iterator<Important> itri = ari.iterator();
 							System.out.println("Size of Critical : "+ari.size());
 							while (itri.hasNext())
 							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
@@ -593,7 +585,7 @@ public class JobsmithController {
 							}  
 
 							ArrayList<Nicetohave> arn = data.getNicetohave();		
-							Iterator itrn = arn.iterator();
+							Iterator<Nicetohave> itrn = arn.iterator();
 							System.out.println("Size of Critical : "+ar.size());
 							while (itrn.hasNext())
 							{   JobsmithReportCapability jrc = new JobsmithReportCapability();    	
@@ -670,10 +662,8 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(userData.getUserid());
-
+		boolean validAccessToken = uac.isValidAccessToken(userData.getUserid());
+		
 		if(validToken)
 		{
 			if(validAccessToken)
@@ -841,9 +831,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		int companyid = data.getCompanyid()	;
 		
@@ -1065,9 +1053,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(userData.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(userData.getUserid());
 
 		if(validToken)
 		{
@@ -1210,10 +1196,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
-
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		if(validToken)
 		{
 			if(validAccessToken)
@@ -1361,9 +1344,7 @@ public class JobsmithController {
 		boolean validToken = false;
 
 		validToken = checkToken(authorizationHeader);
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		
 		int companyid = data.getCompanyid()	;
 
@@ -1413,7 +1394,7 @@ public class JobsmithController {
 							// Get the user account id associated with the user's userid
 							String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 							List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
-							long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+							int accessibleUserAccountId = (int) userAccountIdData.get(0).get("useraccountid");	                	
 
 							// Get the user account id associated with the report
 							String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
@@ -1527,9 +1508,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		
 		int companyid = data.getCompanyid()	;
 
@@ -1578,7 +1557,7 @@ public class JobsmithController {
 							// Get the user account id associated with the user's userid
 							String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 							List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
-							long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+							int accessibleUserAccountId = (int) userAccountIdData.get(0).get("useraccountid");	                	
 
 							// Get the user account id associated with the report
 							String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
@@ -1690,9 +1669,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		
 		int companyid = data.getCompanyid()	;
 
@@ -1741,7 +1718,7 @@ public class JobsmithController {
 							// Get the user account id associated with the user's userid
 							String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 							List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
-							long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+							int accessibleUserAccountId = (int) userAccountIdData.get(0).get("useraccountid");	                	
 
 							// Get the user account id associated with the report
 							String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
@@ -1857,9 +1834,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 
 		int companyid = data.getCompanyid()	;
 
@@ -2096,14 +2071,14 @@ public class JobsmithController {
 
 		String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
 		List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
-		Long accountId = accountIdData.isEmpty() ? 0L : (Long) accountIdData.get(0).get("useraccountid");
+		int accountId = (int) accountIdData.get(0).get("useraccountid");
+		
+		//int profileAccountId = (int) profileIdData.get(0).get("jobsmith_profileId");
 
 		validToken = checkToken(authorizationHeader);
 
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		
 		int companyid = data.getCompanyid()	;
 
@@ -2154,7 +2129,7 @@ public class JobsmithController {
 							// Get the user account id associated with the user's userid
 							String userAccountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 							List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(userAccountIdQuery, data.getUserid());
-							long accessibleUserAccountId = (long) userAccountIdData.get(0).get("useraccountid");	                	
+							int accessibleUserAccountId = (int) userAccountIdData.get(0).get("useraccountid");	                	
 
 							// Get the user account id associated with the report
 							String reportAccountIdQuery = "SELECT useraccountid FROM jobsmith_report_tbl WHERE jobsmith_reportid = ?";
@@ -2404,9 +2379,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(data.getUserid());
 		
 		int companyid = data.getCompanyid()	;
 
@@ -2448,8 +2421,8 @@ public class JobsmithController {
 
 						String accountIdQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";
 						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, data.getUserid());	         	
-						Long useraccountId = (Long) accountIdData.get(0).get("useraccountid");
-						int useraccountIdInt = useraccountId.intValue();
+						int useraccountIdInt = (int) accountIdData.get(0).get("useraccountid");
+						
 
 						data.setUseraccountid(useraccountIdInt);
 
@@ -2457,7 +2430,7 @@ public class JobsmithController {
 						int id = data.getJobsmith_reportid();
 
 						ArrayList<Critical> ar = data.getCritical();		
-						Iterator itr = ar.iterator();
+						Iterator<Critical> itr = ar.iterator();
 						System.out.println("Size of Critical : "+ar.size());
 						while (itr.hasNext())
 						{   
@@ -2490,7 +2463,7 @@ public class JobsmithController {
 						}
 
 						ArrayList<Important> ari = data.getImportant();		
-						Iterator itri = ari.iterator();
+						Iterator<Important> itri = ari.iterator();
 						System.out.println("Size of Critical : "+ari.size());
 						while (itri.hasNext())
 						{   
@@ -2521,7 +2494,7 @@ public class JobsmithController {
 						}  
 
 						ArrayList<Nicetohave> arn = data.getNicetohave();		
-						Iterator itrn = arn.iterator();
+						Iterator<Nicetohave> itrn = arn.iterator();
 						System.out.println("Size of Critical : "+ar.size());
 						while (itrn.hasNext())
 						{   
@@ -2621,9 +2594,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(requestData.getUserid());
 
 		if(validToken)
 		{
@@ -2729,9 +2700,7 @@ public class JobsmithController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
+		boolean validAccessToken = uac.isValidAccessToken(requestData.getUserid());
 		
 		 int companyid = requestData.getCompanyid();
 
@@ -2749,9 +2718,12 @@ public class JobsmithController {
 						ui.setStatus(uaa.getStatus());
 						ui.setStatusdate(uaa.getStatusdate());   
 						
-						String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = ?";
-						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, requestData.getUserid());	         	
-						Long profileAccountId = (Long) accountIdData.get(0).get("useraccountid");						
+						String accountIdQuery = "SELECT ua.useraccountid FROM user_accounts ua WHERE userid = ?";
+						List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(accountIdQuery, requestData.getUserid());	 
+						System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+accountIdQuery);
+						System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+accountIdData);
+						int profileAccountId = (int) accountIdData.get(0).get("useraccountid");		
+						System.out.println(" xxxxxxxxxxxxxxxxxxx ----------           "+profileAccountId);
 						//int profileAccountIdInt = profileAccountId.intValue();
 						
 						

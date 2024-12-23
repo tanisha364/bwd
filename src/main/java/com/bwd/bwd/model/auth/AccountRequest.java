@@ -12,7 +12,7 @@ public class AccountRequest {
 
 	private String code;
 	private int landingid;
-	private Long useraccountid;
+	private int useraccountid;
 	private String firstname;
 	private String lastname;
 	private String email;

@@ -17,16 +17,11 @@ public class JobsmithCapabilities {
 	@Column(name = "Cap_Capabilityid")	
 	private int Cap_CapabilityiId;
 	
-//	@Column(name = "Cap_CapabilityId")	
-//	private Long abc;
-	
 	@Column(name = "Cap_Capability")
 	private String Cap_Capability;
 	
 	@Column(name= "Cap_Description")
 	private String Cap_Description;
-	
-	private int categoryid;
 	
 	
 }

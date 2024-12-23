@@ -26,17 +26,13 @@ public class OauthClients implements UserDetails {
 	@Column(name = "client_secret")
 	private String client_secret;
 	
-	public String jsonString;
+
 	
-	private String authToken;
-	
-	private String  publickey;
-	
-	public void setValues(String ci, String cs, String pk)
+	public void setValues(String ci, String cs)
 	{
 		this.client_id = ci;
 		this.client_secret = cs;
-		this.publickey = pk;
+	
 	}
 	
 	public OauthClients getOauthClients()
@@ -48,7 +44,7 @@ public class OauthClients implements UserDetails {
 	{
 		this.client_id = oc.client_id;
 		this.client_secret = oc.client_secret;
-		this.publickey = oc.publickey;
+		
 	}
 	
 	@Override

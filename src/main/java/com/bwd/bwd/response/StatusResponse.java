@@ -13,4 +13,12 @@ public class StatusResponse {
 	private int statusCode;
 	private String message;	
 
+    @Override
+    public String toString() {
+        return "StatusResponse{" +
+                "valid=" + valid +
+                ", statusCode=" + statusCode +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }

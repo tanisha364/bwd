@@ -76,9 +76,7 @@ public class CompanyController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
+		boolean validAccessToken = auc.isValidAccessToken(requestData.getUserid());
 		
 		System.out.println(" ......................................... ----------  ???????????????????????         "+requestData.getUserid());
 		
@@ -180,9 +178,7 @@ public class CompanyController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(requestData.getUserid());
+		boolean validAccessToken = auc.isValidAccessToken(requestData.getUserid());
 		
 		if(validToken)
 		{
@@ -280,9 +276,7 @@ public class CompanyController {
 
 		validToken = checkToken(authorizationHeader);
 
-		JwtUserToken jut = new JwtUserToken();
-		boolean validAccessToken = false;
-		validAccessToken = jut.isValidAccessToken(data.getUserid());
+		boolean validAccessToken = auc.isValidAccessToken(data.getUserid());
 		
 		if(validToken)
 		{

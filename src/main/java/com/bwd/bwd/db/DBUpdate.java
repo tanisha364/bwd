@@ -3,11 +3,6 @@ package com.bwd.bwd.db;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.bwd.bwd.request.JobsmithReportRequest;
 import com.bwd.bwd.request.JobsmithReportRequestEdit;
@@ -28,16 +23,6 @@ DBConnection dbc = null;
 		con = dbc.getConnection();		
 	}
 	
-	@Autowired
-	private JdbcTemplate jdbcTemplate;	
-	/*
-	 * public void updateObject(JobsmithReport JobsmithReport) { DBOperation dbop =
-	 * new DBOperation();
-	 * 
-	 * String sqlUpdate =
-	 * "UPDATE jobsmith_report_tbl SET archived = 1 WHERE jobsmith_reportid = 5";
-	 * dbop.updateRecord(sqlUpdate); }
-	 */
 	
 	 public StatusResponse updateObject(UserData data) {
 		    StatusResponse sr = new StatusResponse();
@@ -49,14 +34,7 @@ DBConnection dbc = null;
 	        System.out.println(jobsmithReportId);
 	        int companyid = data.getCompanyid();
 	        System.out.println(jobsmithReportId);
-	        
-	        String accountIdQuery = "SELECT ua.useraccountid as uid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = '"+data.getUserid()+"'";
-		
-	        DBSearch dbs = new DBSearch();
-			String accountIdData = dbs.getUserAccountId(accountIdQuery,"uid");
-	        Long profileAccountId =  Long.parseLong(accountIdData); 
-	        
-	        // Use a prepared statement to avoid SQL injection
+	     
 	        String sqlUpdate = "UPDATE jobsmith_report_tbl a "
 	        		+ "INNER JOIN user_accounts b ON a.useraccountid = b.useraccountid "
 	        		+ "INNER JOIN jobsmith_user_profile_tbl c ON b.useraccountid = c.useraccountid SET archived = " + newArchive+" WHERE a.jobsmith_reportid = "+ jobsmithReportId+" AND c.companyid ="+companyid+" AND c.isAccess = 1";
@@ -93,13 +71,7 @@ DBConnection dbc = null;
 	        int companyid = data.getCompanyid();
 	        System.out.println(jobsmithReportId);
 	        
-	        String accountIdQuery = "SELECT ua.useraccountid as uid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = '"+data.getUserid()+"'";
-		
-	        DBSearch dbs = new DBSearch();
-			String accountIdData = dbs.getUserAccountId(accountIdQuery,"uid");
-	        Long profileAccountId =  Long.parseLong(accountIdData); 
-	        
-	        // Use a prepared statement to avoid SQL injection
+	      
 	        String sqlUpdate =  "UPDATE jobsmith_report_tbl a "
 	        		+ "INNER JOIN user_accounts b ON a.useraccountid = b.useraccountid "
 	        		+ "INNER JOIN jobsmith_user_profile_tbl c ON b.useraccountid = c.useraccountid SET report_status = '" + reportStatus+"', status_date=current_timestamp  WHERE a.jobsmith_reportid = "+ jobsmithReportId+" AND c.companyid ="+companyid+" AND c.isAccess = 1";
@@ -142,7 +114,7 @@ DBConnection dbc = null;
 						WHERE 
 						  `jobsmith_reportid` = """+data.getJobsmith_reportid(); 
 		 
-		 System.out.println(sqlUpdate);
+		
 
 		 dbop.updateRecord(sqlUpdate);
 
@@ -173,20 +145,11 @@ DBConnection dbc = null;
 	        int jobsmithReportId = data.getReportId();
 	        int newLocked =  data.getLocked();
 	        int companyid = data.getCompanyid();
-	        System.out.println(jobsmithReportId);
-	        
-	        String accountIdQuery = "SELECT ua.useraccountid as uid FROM user_accounts ua JOIN jobsmith_report_tbl jrt ON ua.useraccountid = jrt.useraccountid WHERE userid = '"+data.getUserid()+"'";
-		
-	        DBSearch dbs = new DBSearch();
-			String accountIdData = dbs.getUserAccountId(accountIdQuery,"uid");
-	        Long profileAccountId =  Long.parseLong(accountIdData); 
-
-	        
-	        // Use a prepared statement to avoid SQL injection
+	 	    
 	        String sqlUpdate = "UPDATE jobsmith_report_tbl a "
 	        		+ "INNER JOIN user_accounts b ON a.useraccountid = b.useraccountid " 
 	        		+ "INNER JOIN jobsmith_user_profile_tbl c ON b.useraccountid = c.useraccountid SET a.locked = " + newLocked+" WHERE a.jobsmith_reportid = "+ jobsmithReportId+" AND c.companyid ="+companyid+" AND c.isAccess = 1";
-	        System.out.println(sqlUpdate);
+	        
 	        dbop.updateRecord(sqlUpdate);
 	        
 	        sr.setStatusCode(dbop.getStatusCode());
@@ -219,7 +182,7 @@ DBConnection dbc = null;
 	        {
 	        	sqlUpdate = "UPDATE jobsmith_report_capability_tbl SET archived = -9 WHERE jobsmith_report_capabilityid = "+ data.getJobsmith_report_capabilityid();
 	        }
-	        System.out.println(sqlUpdate);
+	      
 	        dbop.updateRecord(sqlUpdate);
 	        
 	        sr.setStatusCode(dbop.getStatusCode());

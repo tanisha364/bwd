@@ -51,9 +51,8 @@ public class Base64JsonServiceImpl implements Base64JsonService
     	JSONObject json = null;
     	try {
     		json = new JSONObject(name);	
-    		String pubicKey = "";
     		oc = new OauthClients();
-    		oc.setValues((String) json.get("client_id"),(String) json.get("client_secret"), pubicKey);
+    		oc.setValues((String) json.get("client_id"),(String) json.get("client_secret"));
     	}catch(JSONException jsone) {
     		System.out.println(jsone);
     	}    	  

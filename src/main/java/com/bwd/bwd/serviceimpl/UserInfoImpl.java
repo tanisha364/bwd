@@ -48,23 +48,23 @@ public class UserInfoImpl implements UserInfoService
 		return uir;
 	}
 	
-    public static String generateUniqueLinkId()
-    {
-    	DBSearch dbs = new DBSearch();
-		String linkId = RandomKeyGenerator.generateRandomKey();		
-		boolean isLinkIdExisits = dbs.findObjects(linkId);
-		int count = 0;
-		while(isLinkIdExisits)
-		{
-			count++;
-		//	System.out.println("No of Loop to get Linkid : "+count);
-			linkId = RandomKeyGenerator.generateRandomKey();		
-			isLinkIdExisits = dbs.findObjects(linkId);			
-		}
-		System.out.println(dbs.findObjects("\nNo of Loop to get Linkid : "+count+"\nLink Id : "+linkId));    	
-		
-		return linkId;
-    }	
+	public static String generateUniqueLinkId()
+	{
+	    DBSearch dbs = new DBSearch();
+	    String linkId = RandomKeyGenerator.generateRandomKey();        
+	    boolean isLinkIdExists = dbs.findObjects(linkId);
+	    int count = 0;
+	    while (isLinkIdExists)
+	    {
+	        count++;
+	        linkId = RandomKeyGenerator.generateRandomKey();        
+	        isLinkIdExists = dbs.findObjects(linkId);            
+	    }
+	    System.out.println("\nNo of Loops to get Linkid: " + count + "\nLink Id: " + linkId);        
+	    
+	    return linkId;
+	}
+
     
     public static String generateUniqueLinkId(int keylenght)
     {

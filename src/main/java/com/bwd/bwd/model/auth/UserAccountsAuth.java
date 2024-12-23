@@ -22,7 +22,7 @@ public class UserAccountsAuth {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "useraccountid")	
-	private Long useraccountid;
+	private int useraccountid;
 	
 	@Column(name = "regnum")	
 	private String regnum;
@@ -42,8 +42,8 @@ public class UserAccountsAuth {
 	@Column(name = "linkid")	
 	private String linkid="-1";
 	
-	@Column(name = "status")
-	private BigDecimal status = BigDecimal.valueOf(1);
+	@Column(name = "status", precision = 4, scale = 1)
+	private BigDecimal status = BigDecimal.valueOf(1.0);
 	
 	@Column(name = "statusdate", columnDefinition = "DATETIME")
 	public java.sql.Timestamp statusdate;

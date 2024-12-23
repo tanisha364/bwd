@@ -21,7 +21,7 @@ public class RegistrationActivity {
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    private int registration_activitiy_id;
 
-	    private long useraccountid;
+	    private int useraccountid;
 	    private int companyid;
 	    private int comptokenid;
 	    private int jobid;
@@ -37,7 +37,7 @@ public class RegistrationActivity {
 		}
 
 		
-		public RegistrationActivity registrationActivity(long useraccountid, int companyid, int comptokenid, int jobid,String user_agent,String ip )
+		public RegistrationActivity registrationActivity(int useraccountid, int companyid, int comptokenid, int jobid,String user_agent,String ip )
 		{
 			java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
 			this.useraccountid = useraccountid;

@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,7 @@ import com.bwd.bwd.repository.UserTelAuthRepo;
 import com.bwd.bwd.repository.UserTokenAuthRepo;
 import com.bwd.bwd.request.LoginData;
 import com.bwd.bwd.request.TokenInfoReq;
+import com.bwd.bwd.request.UserData;
 import com.bwd.bwd.response.AssignmentResponse;
 import com.bwd.bwd.response.AuthInfo;
 import com.bwd.bwd.response.AuthResponse;
@@ -64,6 +66,7 @@ import com.bwd.bwd.response.TermsResponse;
 import com.bwd.bwd.response.TextResponse;
 import com.bwd.bwd.response.TokenInfo;
 import com.bwd.bwd.response.TokenResponse;
+import com.bwd.bwd.response.UserInfo;
 import com.bwd.bwd.response.UserTokenInfo;
 import com.bwd.bwd.response.UserTokenResponse;
 import com.bwd.bwd.service.AuthServices;
@@ -130,6 +133,38 @@ public class UserAuthController {
 
 	@Value("${spring.mail.display.name}")
 	private String senderDisplayName;
+	
+	
+	@Autowired
+	JwtUserToken JwtUserToken;
+	
+	 public boolean isValidAccessToken(String token) {
+	        System.out.println(token);
+
+	        boolean isValid;
+	        try {
+	            final Claims claims = JwtUserToken.getAllClaimsFromToken(token);
+	            long currentTime = System.currentTimeMillis();
+	            Date currentDate = new Date(currentTime);
+
+	            if (currentDate.before(claims.getExpiration())) {
+	            	System.out.println("token1");
+	            	  String query = "SELECT COUNT(*) FROM user_accounts WHERE userid = ?";
+	  	            Integer count = jdbcTemplate.queryForObject(query, Integer.class, token);
+
+	  	            return count != null && count > 0;
+	            } else {
+	                isValid = false;
+	            }
+	        } catch (io.jsonwebtoken.ExpiredJwtException ejex) {
+	            isValid = false;
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            isValid = false;
+	        }
+
+	        return isValid;
+	    }
 
 
 	@GetMapping("/token")
@@ -241,7 +276,7 @@ public class UserAuthController {
 
 			String useridToken = jwtToken;
 
-			UserAccountsAuth user = uaar.getReferenceById(ai.getUseraccountid());
+			UserAccountsAuth user = uaar.getReferenceByUseraccountid(ai.getUseraccountid());
 			user.setLastvisit(DateTimeCreation.getModifedTimestamp());
 			user.setUserid(useridToken);
 			user.setRefreshtoken(refreshToken);
@@ -250,6 +285,8 @@ public class UserAuthController {
 			ai.setEmail(data.getEmail());
 			ai.setUserid(user.getUserid());
 			ai.setRefreshtoken(user.getRefreshtoken());
+			ai.setFirstname(user.getFirstname());
+			ai.setLastname(user.getLastname());
 			dr.setUserinfo(ai);
 			ar.setData(dr);
 			System.out.println(useridToken);
@@ -423,7 +460,7 @@ public class UserAuthController {
 			ar.setStatus(sr);
 
 			try {
-				uaa = uaar.getReferenceById(uea.getUseraccountid());
+				uaa = uaar.getReferenceByUseraccountid(uea.getUseraccountid());
 				try {
 					ar = as.checkUser(uaa, ar);
 					dr = ar.getData();
@@ -431,7 +468,7 @@ public class UserAuthController {
 					ar = as.checkLevel(ai.getUserLevel(), ar);
 					System.out.println("------------------- ++++ : " + ai.getUserLevel());
 					if (ai.getUserLevel() == -10) {
-						ai.setUseraccountid(null);
+						ai.setUseraccountid(0);
 						ai.setEmail(null);
 						ai.setRegnum(null);
 						ai.setUserLevel(0);
@@ -453,7 +490,7 @@ public class UserAuthController {
 								sr.setStatusCode(6);
 								sr.setMessage("Successful login");
 							} else {
-								ai.setUseraccountid(null);
+								ai.setUseraccountid(0);
 								ai.setEmail(null);
 								ai.setRegnum(null);
 								ai.setUserLevel(0);
@@ -466,7 +503,7 @@ public class UserAuthController {
 							ar.setStatus(sr);
 						}
 						if (ai.getUserLevel() == -1) {
-							ai.setUseraccountid(null);
+							ai.setUseraccountid(0);
 							ai.setEmail(null);
 							ai.setRegnum(null);
 							ai.setUserLevel(0);
@@ -481,7 +518,7 @@ public class UserAuthController {
 							}
 						}
 						if (ai.getUserLevel() == -5) {
-							ai.setUseraccountid(null);
+							ai.setUseraccountid(0);
 							ai.setEmail(null);
 							ai.setRegnum(null);
 							ai.setUserLevel(0);
@@ -503,7 +540,7 @@ public class UserAuthController {
 					entity = new ResponseEntity<>(ar, headers, HttpStatus.OK);
 				} catch (Exception e) {
 					System.out.println("Some Error Occured\n" + e.getMessage());
-					ai.setUseraccountid(null);
+					ai.setUseraccountid(0);
 					ai.setEmail(null);
 					ai.setRegnum(null);
 					ai.setUserLevel(0);
@@ -519,7 +556,7 @@ public class UserAuthController {
 			} catch (Exception ex) {
 				System.out.println(
 						"The Useraccountid does not match with our record for provided email\n" + ex.getMessage());
-				ai.setUseraccountid(null);
+				ai.setUseraccountid(0);
 				ai.setEmail(null);
 				ai.setRegnum(null);
 				ai.setUserLevel(0);
@@ -534,7 +571,7 @@ public class UserAuthController {
 			}
 		} catch (Exception exp) {
 			System.out.println("The email/password provided does not match our record \n" + exp.getMessage());
-			ai.setUseraccountid(null);
+			ai.setUseraccountid(0);
 			ai.setEmail(null);
 			ai.setRegnum(null);
 			ai.setUserLevel(0);
@@ -606,12 +643,13 @@ public class UserAuthController {
 
 		if (validToken) {
 			try {
-				userEmails = jut.getUserEmailClaims(refreshtoken);
+				
+				userEmails = jut.getUserEmailClaims(refreshtoken);			
 
 				String jwtToken = jut.generateToken(userEmails);
 				String refreshToken = jut.refreshToken(jwtToken);
 
-				UserAccountsAuth user = uaar.getReferenceById(userEmails.getUseraccountid());
+				UserAccountsAuth user = uaar.getReferenceByUseraccountid(userEmails.getUseraccountid());
 				user.setUserid(jwtToken);
 				user.setRefreshtoken(refreshToken);
 				uaar.save(user);
@@ -686,17 +724,17 @@ public class UserAuthController {
 				
 				String emailQuery = "SELECT useraccountid FROM user_email_tbl WHERE email = ? LIMIT 1";								
 				List<Map<String, Object>> userAccountIdData = jdbcTemplate.queryForList(emailQuery, userAccount.getEmail());
-				long Euid = 0;
+				int Euid = 0;
 				if (!userAccountIdData.isEmpty()) {
-				    Euid = (long) userAccountIdData.get(0).get("useraccountid");
+				    Euid = (int) userAccountIdData.get(0).get("useraccountid");
 				}
 				System.out.println(Euid);
 
-				String telQuery = "SELECT useraccountid FROM user_tel_tbl WHERE tel = ? LIMIT 1";								
+				String telQuery = "SELECT useraccountid FROM user_tel_tbl WHERE tel = ? AND archived = 0 LIMIT 1";								
 				List<Map<String, Object>> userTelData = jdbcTemplate.queryForList(telQuery, userAccount.getTel());
-				long Tuid = 0;
+				int Tuid = 0;
 				if (!userTelData.isEmpty()) {
-				    Tuid = (long) userTelData.get(0).get("useraccountid");
+				    Tuid = (int) userTelData.get(0).get("useraccountid");
 				}
 				System.out.println(Tuid);	
 					
@@ -820,41 +858,41 @@ public class UserAuthController {
 
 					UserAccountsAuth uaa = new UserAccountsAuth();
 					uaar.save(uaa);
-					Long useraccountid = uaa.getUseraccountid();
+					int useraccountid = uaa.getUseraccountid();
 					String regnum = mark + useraccountid;
 
 					uaar.save(uaa.createAccount(userAccount, regnum, linkid1, option));
 
-					Long id = uaa.getUseraccountid();
-					int convertedId = id.intValue();
+					int id = uaa.getUseraccountid();
+					//int convertedId = id.intValue();
 
 					UserEmailsAuth uea = new UserEmailsAuth();
 					uer.save(uea.createEmail(id, userAccount.getEmail(),verificationid));
-					Long bwdEmailId = uea.getBwdEmailId();
+					int bwdEmailId = uea.getBwdEmailId();
 					String email = uea.getEmail();
 
 					UserTelsAuth uta = new UserTelsAuth();
 					utr.save(uta.createTel(id, userAccount.getTel(), userAccount.getTelCode()));
 
 					UesrTokenAuth utoa = new UesrTokenAuth();
-					utor.save(utoa.createToken(convertedId, companyid, comptokenid));
+					utor.save(utoa.createToken(id, companyid, comptokenid));
 
 					String companyemail = userAccount.getEmail();
 					UserAssociationAuth uaca = new UserAssociationAuth();
-					uacar.save(uaca.createAssociation(convertedId, comptokenid, companyid, jobid, companyemail,
+					uacar.save(uaca.createAssociation(id, comptokenid, companyid, jobid, companyemail,
 							userAccount.getParticipanttype()));
 
-					String sql6 = "select test_id, archived, squence from landing_questionnaire_tbl lqt INNER JOIN landingpage lp ON lqt.landing_assessment_id = lp.landingassessmentid where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
+					String sql6 = "select test_id, archived, sequence from landing_questionnaire_tbl lqt INNER JOIN landingpage lp ON lqt.landing_assessment_id = lp.landingassessmentid where code = '" + userAccount.getCode() + "' and landingid = " + userAccount.getLandingid();
 
 					List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql6);
 
 					for (Map<String, Object> row : rows) {
 						int testId = (int) row.get("test_id");
 						int archived = (int) row.get("archived");
-						int sequence = (int) row.get("squence");
+						int sequence = (int) row.get("sequence");
 
 						QuestionAssignmentAuth qaa = new QuestionAssignmentAuth();
-						qaar.save(qaa.createAss(convertedId, companyid, sequence, testId, archived));
+						qaar.save(qaa.createAss(id, companyid, sequence, testId, archived));
 					}
 					
 					RegistrationActivity ra = new RegistrationActivity();
@@ -916,8 +954,8 @@ public class UserAuthController {
 	}
 	
 	
-	public boolean save(Long Euid, int landingid, String useragent, String ip, String email, int participanttype) {
-	    int convertedId = Euid.intValue();
+	public boolean save(int Euid, int landingid, String useragent, String ip, String email, int participanttype) {
+	    ///int convertedId = Euid.intValue();
 	    
 	    // Query for companyid and comptoken from landingpage
 	    String sql1 = "SELECT companyid FROM landingpage WHERE landingid = ?";
@@ -953,13 +991,13 @@ public class UserAuthController {
 	        }else {
 	        	System.out.println("......................");
 	        	rap.save(ra.registrationActivity(Euid, companyIdFromLandingPage, landingPageCompToken, jobid, useragent, ip));
-	            utor.save(utoa.createToken(convertedId, companyIdFromLandingPage, landingPageCompToken));
+	            utor.save(utoa.createToken(Euid, companyIdFromLandingPage, landingPageCompToken));
 	        }
 	       
 	    } else {
 	    	System.out.println("?????????????????????????");
-	        uacar.save(uaca.createAssociation(convertedId, landingPageCompToken, companyIdFromLandingPage, jobid, email, participanttype));
-	        utor.save(utoa.createToken(convertedId, companyIdFromLandingPage, landingPageCompToken));
+	        uacar.save(uaca.createAssociation(Euid, landingPageCompToken, companyIdFromLandingPage, jobid, email, participanttype));
+	        utor.save(utoa.createToken(Euid, companyIdFromLandingPage, landingPageCompToken));
 	        rap.save(ra.registrationActivity(Euid, companyIdFromLandingPage, landingPageCompToken, jobid, useragent, ip));
 	    }
 	    
@@ -1169,8 +1207,7 @@ public class UserAuthController {
 				String password1 = asi.getHash(password);
 
 				String uid = "SELECT useraccountid FROM user_email_tbl WHERE bwd_email_id = "+mailId;
-				List<Map<String, Object>> accountIdData = jdbcTemplate.queryForList(uid);	         	
-				Long UID = accountIdData.isEmpty() ? 0L : (Long) accountIdData.get(0).get("useraccountid");								
+				int UID = jdbcTemplate.queryForObject(uid, Integer.class);	         								
 
 				String count = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";					
 				int emailCount = 0; 
@@ -1232,18 +1269,159 @@ public class UserAuthController {
 		return entity;
 	}
 
+	@PostMapping("/updatepass")
+	public ResponseEntity<StatusResponse> updatepass(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,@RequestBody UserData requestData)
+	{				
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();				
+		StatusResponse sr = new StatusResponse();    	
+				
+		new UserAccountsAuth();
+		new UserInfo();    	
 
+		boolean validToken = false;
+
+		validToken = checkToken(authorizationHeader);
+
+		boolean validAccessToken = isValidAccessToken(requestData.getUserid());
+		
+		if(validToken)
+		{
+			if(validAccessToken)
+			{		
+				try {
+					try
+					{ 
+						String password = requestData.getNewpassword();
+						String oldpassword = requestData.getPassword();
+						
+						AuthServiceImpl asi = new AuthServiceImpl();				
+						String password1 = asi.getHash(password);
+						
+						
+						String uidQuery = "SELECT useraccountid FROM user_accounts WHERE userid = ?";						
+						int UID = jdbcTemplate.queryForObject(uidQuery, Integer.class,  requestData.getUserid());
+						
+						String count = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";					
+						int emailCount = 0; 
+						try {
+							emailCount = jdbcTemplate.queryForObject(count, Integer.class, UID);
+						} catch (EmptyResultDataAccessException e) {	   
+							emailCount = 0; 
+						}       									
+
+						if(emailCount > 0)
+						{
+							String dbpass = "select password from user_accounts where useraccountid=?";
+							String dbPassword = jdbcTemplate.queryForObject(dbpass, String.class, UID);
+							
+							boolean compare = comparePassword(oldpassword, dbPassword);
+							if(!compare) {
+								System.out.println(" ......................................... ----------  ???????????????????????");
+								sr.setValid(false);
+								sr.setStatusCode(12);
+								sr.setMessage("Password does not match");
+								return new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);
+							}
+							
+							String last = "select password_history_id FROM password_history_tbl WHERE useraccountid=? AND last_3 = 1";
+							List<Integer> passwordHistoryIds = jdbcTemplate.queryForList(last, Integer.class, UID);
+							if (passwordHistoryIds.size() >= 3) {
+								int smallestPasswordHistoryId = Collections.min(passwordHistoryIds);
+
+								String up = "update password_history_tbl set last_3 = 0 where password_history_id = ? ";
+								jdbcTemplate.update(up, smallestPasswordHistoryId);													
+							}
+
+							boolean passwordMatchesLastThree = comparePasswordWithLastThree(requestData.getNewpassword(), UID);					 					 
+							if (passwordMatchesLastThree) {
+								sr.setValid(false);
+								sr.setStatusCode(11);
+								sr.setMessage("Password matches one of the last three used passwords.");
+								return new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);
+							}
+
+							String pid = "SELECT password_history_id FROM  password_history_tbl WHERE useraccountid=? AND archived=0";
+							int Passid = jdbcTemplate.queryForObject(pid, Integer.class, UID);
+
+							String up = "UPDATE password_history_tbl SET archived=1 WHERE password_history_id=?";
+							jdbcTemplate.update(up, Passid); 
+						}
+
+						String pwd = "UPDATE user_accounts SET password = ? WHERE useraccountid = ?";
+						jdbcTemplate.update(pwd, password1, UID);  
+
+						PasswordHistory ph = new PasswordHistory();
+						phr.save(ph.createPasswordHistory(UID,password1));
+
+						sr.setValid(true);    
+						sr.setStatusCode(1);
+						sr.setMessage("Authenticate User Success");  
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);     				
+					}catch(NullPointerException npex)
+					{
+						npex.printStackTrace();
+						System.out.println(npex.getMessage());			
+						sr.setValid(false);
+						sr.setStatusCode(0);
+						sr.setMessage("Unauthentic Token Or NULL Or Unauthentic User");
+						
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);    				
+
+					}catch(Exception ex)
+					{
+						ex.printStackTrace();
+						System.out.println(ex.getMessage());			
+						sr.setValid(false);
+						sr.setStatusCode(0);
+						sr.setMessage("Unauthentic Token Or Unauthentic User");
+					
+						entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+					}  		
+				}catch (Exception ex) {
+					ex.printStackTrace();
+					System.out.println(ex.getMessage());			
+					sr.setValid(false);
+					sr.setStatusCode(0);
+					sr.setMessage("Unauthentic Token Or Unauthentic User");
+					
+					entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+				}
+			}    	
+			else
+			{
+				sr.setValid(false);
+				sr.setStatusCode(21);
+				sr.setMessage("Unauthentic Access Token");
+				
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+			}
+		}
+		else
+		{
+			sr.setValid(false);
+			sr.setStatusCode(20);
+			sr.setMessage("Unauthentic Token");			
+	
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.UNAUTHORIZED);
+		}
+		return entity;
+	}
+	
+	
+	
 	public boolean comparePassword(String textPassword,String dbPassword)
 	{
 		boolean passChecker = false;
 		BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
 		passChecker = bc.matches(textPassword,dbPassword);
-
+		System.out.println(textPassword);
+		System.out.println(dbPassword);
 		return passChecker;
 	}
 
 	@SuppressWarnings("deprecation")
-	public boolean comparePasswordWithLastThree(String textPassword, Long UID) {
+	public boolean comparePasswordWithLastThree(String textPassword, int UID) {
 		String query = "SELECT ph.password FROM password_history_tbl ph WHERE ph.useraccountid = ? ORDER BY ph.date_set DESC LIMIT 3";
 		List<String> lastThreePasswords = jdbcTemplate.queryForList(query, new Object[]{UID}, String.class);
 		for (String dbPassword : lastThreePasswords) {
@@ -1259,7 +1437,7 @@ public class UserAuthController {
 	
 	
 	@PostMapping("/isemailvalid")
-	public ResponseEntity<EmailResponse> isemailexist(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+	public ResponseEntity<EmailResponse> isemailvalid(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
 
 		ResponseEntity<EmailResponse> entity = null;
 		HttpHeaders headers = new HttpHeaders();
@@ -1282,7 +1460,7 @@ public class UserAuthController {
 				{
 					
 				String sql1 = "SELECT useraccountid FROM user_email_tbl WHERE email = ? ";
-				long useraccountid = jdbcTemplate.queryForObject(sql1, Integer.class, email);
+				int useraccountid = jdbcTemplate.queryForObject(sql1, Integer.class, email);
 				
 				String sql2 = "select userlevel from user_accounts WHERE useraccountid = ? ";
 				int userlevel = jdbcTemplate.queryForObject(sql2, Integer.class, useraccountid);
@@ -1314,7 +1492,7 @@ public class UserAuthController {
 						
 						tr.setStatus(sr);
 						tr.setEmail(email);
-						tr.setEmailId((long) mailId);
+						tr.setEmailId((int) mailId);
 						entity = new ResponseEntity<>(tr, headers, HttpStatus.FORBIDDEN);
 					}
 					else {
@@ -1324,7 +1502,7 @@ public class UserAuthController {
 					
 					tr.setStatus(sr);
 					tr.setEmail(email);
-					tr.setEmailId((long) mailId);
+					tr.setEmailId((int) mailId);
 					tr.setPhonenumber(tel);
 					tr.setTel_code(tel_code);
 					entity = new ResponseEntity<>(tr, headers, HttpStatus.OK);
@@ -1405,9 +1583,7 @@ public class UserAuthController {
 				
 				
 				String sql = "SELECT useraccountid FROM user_accounts WHERE linkid = '" + linkid + "'";
-				List<Map<String, Object>> ua = jdbcTemplate.queryForList(sql);	         	
-				Long UID = ua.isEmpty() ? 0L : (Long) ua.get(0).get("useraccountid");								
-				int convertedId = UID.intValue();
+				int convertedId = jdbcTemplate.queryForObject(sql, Integer.class);	
 				
 				String sql1 = "select test_id from questionnaire_assignment where useraccountid = " +convertedId;
                 List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql1);
@@ -1509,7 +1685,7 @@ public class UserAuthController {
 			try {						
 			
 				String sql1 = "SELECT useraccountid FROM user_email_tbl WHERE email = ? ";
-				long UID = jdbcTemplate.queryForObject(sql1, Integer.class, mailId);
+				int UID = jdbcTemplate.queryForObject(sql1, Integer.class, mailId);
 				
 				String count = "SELECT count(tel) FROM user_tel_tbl WHERE tel=? and archived =0";				
 				int emailCount = 0; 
@@ -1559,4 +1735,91 @@ public class UserAuthController {
 		} 
 		return entity;
 	}
+	
+	@PostMapping("/isemailexist")
+	public ResponseEntity<StatusResponse> isemailexist(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();
+
+		String email = requestBody.get("email");
+
+		try {
+			String sqlCount = "SELECT COUNT(*) FROM user_email_tbl WHERE email = ?";
+			int emailCount = jdbcTemplate.queryForObject(sqlCount, Integer.class, email);
+
+			if(emailCount > 0)
+			{
+				sr.setValid(false);    
+				sr.setStatusCode(2);
+				sr.setMessage("Record exist");  
+
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);
+			}
+			else {
+				sr.setValid(true);    
+				sr.setStatusCode(1);
+				sr.setMessage("New record");  
+
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+			}
+		}
+
+		catch (Exception ex) {
+			ex.printStackTrace();
+			sr.setValid(false);
+			sr.setStatusCode(0);
+			sr.setMessage("Unauthentic Token Or Unauthentic User");		
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+		}
+		return entity;
+	}
+
+	
+	@PostMapping("/isnumberexist")
+	public ResponseEntity<StatusResponse> isnumberexist(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,  @RequestBody Map<String, String> requestBody) {
+
+		ResponseEntity<StatusResponse> entity;
+		HttpHeaders headers = new HttpHeaders();
+
+		StatusResponse sr = new StatusResponse();
+
+		String phn = requestBody.get("tel");
+
+		try {
+			
+			String count = "SELECT count(*) FROM user_tel_tbl WHERE tel=? and archived =0";				
+			int emailCount = jdbcTemplate.queryForObject(count, Integer.class, phn);
+			
+			if(emailCount > 0)
+			{
+				sr.setValid(false);    
+				sr.setStatusCode(2);
+				sr.setMessage("Record exist");  
+
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.BAD_REQUEST);
+			}
+			else {
+				sr.setValid(true);    
+				sr.setStatusCode(1);
+				sr.setMessage("New record");  
+
+				entity = new ResponseEntity<>(sr, headers, HttpStatus.OK);
+			}
+		}
+
+		catch (Exception ex) {
+			ex.printStackTrace();
+			sr.setValid(false);
+			sr.setStatusCode(0);
+			sr.setMessage("Unauthentic Token Or Unauthentic User");		
+			entity = new ResponseEntity<>(sr, headers, HttpStatus.FORBIDDEN);
+		}
+		return entity;
+	}
+
+	
+	
 }

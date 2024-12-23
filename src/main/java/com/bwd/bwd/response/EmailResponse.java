@@ -13,6 +13,6 @@ public class EmailResponse {
 	private StatusResponse status;		
 	private String email;	
 	private String phonenumber;
-	private Long emailId;
+	private int emailId;
 	private int tel_code;
 }

@@ -19,10 +19,10 @@ public class UserTelsAuth {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_tel_id")
-    private Long userTelId;
+    private int userTelId;
 
     @Column(name = "useraccountid")
-	private Long useraccountid;
+	private int useraccountid;
 
     @Column(name = "tel")
     private String tel;
@@ -40,7 +40,7 @@ public class UserTelsAuth {
 		
 	}
 
-	public UserTelsAuth(long userTelId, long useraccountid,String tel, int telCode)
+	public UserTelsAuth(int userTelId, int useraccountid,String tel, int telCode)
 	{	
 		this.userTelId = userTelId;
 		this.useraccountid = useraccountid;
@@ -48,7 +48,7 @@ public class UserTelsAuth {
 		this.telCode = telCode;		
 	}
 	
-	public UserTelsAuth createTel(long id,String tel, int telCode)
+	public UserTelsAuth createTel(int id,String tel, int telCode)
 	{
 		java.sql.Timestamp dt = DateTimeCreation.getSqlTimestamp();
 		this.useraccountid = id;

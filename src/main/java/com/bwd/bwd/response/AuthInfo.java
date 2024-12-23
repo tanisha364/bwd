@@ -9,10 +9,12 @@ import lombok.Setter;
 @Setter
 @JavaBean
 public class AuthInfo {
-	private Long useraccountid;
+	private int useraccountid;
 	private String email;	
 	private String regnum;
 	private int userLevel;	
 	private String userid;
 	private String refreshtoken;
+	private String firstname;	
+	private String lastname;
 }

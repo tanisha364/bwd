@@ -12,7 +12,7 @@ public interface UserAccountsAuthRepo  extends JpaRepository<UserAccountsAuth, L
 {
 	//List<UserAccountsAuth> findByEmail(String email);	
 	
-	UserAccountsAuth getReferenceById(Long useraccountid);
+	UserAccountsAuth getReferenceByUseraccountid(int useraccountid);
 	
 	UserAccountsAuth getReferenceByUserid(String userid);
 	

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JWTServiceImpl{
 	
+	 @Autowired
+	    private JdbcTemplate jdbcTemplate;
+	 
 	private String tokenType = "Bearer";
 	@Autowired
 	OauthClientsRepo ocr;
@@ -92,6 +96,19 @@ public class JWTServiceImpl{
 		return Jwts.parserBuilder().setSigningKey(getSiginKey()).build().parseClaimsJws(token).getBody(); 
 	}	
 	
+	
+	 public boolean isTokenExistsInDB(String token) {
+	        try {
+	            String query = "SELECT COUNT(*) FROM user_accounts WHERE userid = ?";
+	            Integer count = jdbcTemplate.queryForObject(query, Integer.class, token);
+
+	            return count != null && count > 0;
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            return false;
+	        }
+	    }
+	 
 	public static void main(String [] args)
 	{
 		JWTServiceImpl jsi = new JWTServiceImpl();
